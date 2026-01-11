@@ -790,19 +790,28 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
       <div className={`w-full absolute top-0 right-0 left-0 pointer-events-none z-20 transition-all duration-500 ease-in-out ${showControls ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full'
         }`}>
         <div className="absolute w-full transition-all z-10 top-0 left-0 right-0 h-[120px] bg-gradient-to-b to-transparent from-black/50"></div>
-        <div className="relative z-20 p-8">
+        <div className={`relative z-20 ${isMobile ? 'p-4' : 'p-8'}`}>
           <div className="flex w-full justify-between items-center">
             <div className="flex flex-row gap-4">
               <div className="flex flex-row items-center">
                 <div className="pointer-events-auto flex flex-row items-center">
                   <button
-                    className="flex items-center justify-center font-medium whitespace-nowrap relative overflow-hidden transition-all backdrop-blur-sm transform-gpu h-10 text-sm px-4 rounded-md bg-black/50 text-white hover:bg-black/70 focus-visible:outline-white/20 cursor-pointer gap-2"
+                    className={`flex items-center justify-center font-bold whitespace-nowrap relative overflow-hidden transition-all backdrop-blur-sm transform-gpu h-10 text-sm ${isMobile ? 'w-10 rounded-full px-0' : 'px-4 rounded-md'} bg-black/50 text-white hover:bg-black/70 focus-visible:outline-white/20 cursor-pointer gap-2 border border-white/10`}
                     onClick={() => onClose ? onClose() : router.back()}
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-                      <path d="m15 18-6-6 6-6" />
-                    </svg>
-                    Retour
+                    {isMobile ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                      </svg>
+                    ) : (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                          <path d="m15 18-6-6 6-6" />
+                        </svg>
+                        Retour
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
@@ -847,27 +856,73 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
       )}
 
       {/* Contrôles */}
-      <div className={`w-full absolute bottom-0 left-0 right-0 z-20 transition-all duration-500 ease-in-out px-4 pb-4 sm:px-8 sm:pb-8 ${showControls ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-full'
+      {/* Mobile Center Controls - Gros boutons Play/Skip */}
+      {isMobile && showControls && (
+        <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
+          <div className="flex items-center gap-12 pointer-events-auto">
+            {/* Skip Back -10s */}
+            <button
+              onClick={(e) => { e.stopPropagation(); skipTime(-10); }}
+              className="p-4 rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 transition-all active:scale-95"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                <path d="M3 3v5h5" />
+                <path d="M12 12l-4 0" stroke="transparent" /> {/* Spacer */}
+              </svg>
+              <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] font-bold mt-1 ml-0.5">10</span>
+            </button>
+
+            {/* Play/Pause */}
+            <button
+              onClick={(e) => { e.stopPropagation(); togglePlay(); }}
+              className="p-6 rounded-full bg-white/10 text-white backdrop-blur-md hover:bg-white/20 transition-all active:scale-95 border border-white/20"
+            >
+              {isPlaying ? (
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+                  <path fillRule="evenodd" d="M6.75 5.25a.75.75 0 0 1 .75-.75H9a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H7.5a.75.75 0 0 1-.75-.75V5.25Zm7.5 0A.75.75 0 0 1 15 4.5h1.5a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H15a.75.75 0 0 1-.75-.75V5.25Z" clipRule="evenodd" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="currentColor" className="ml-1">
+                  <path fillRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" clipRule="evenodd" />
+                </svg>
+              )}
+            </button>
+
+            {/* Skip Forward +10s */}
+            <button
+              onClick={(e) => { e.stopPropagation(); skipTime(10); }}
+              className="p-4 rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 transition-all active:scale-95"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+                <path d="M21 3v5h-5" />
+              </svg>
+              <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] font-bold mt-1 mr-0.5">10</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Contrôles du bas */}
+      <div className={`w-full absolute bottom-0 left-0 right-0 z-20 transition-all duration-500 ease-in-out ${isMobile ? 'px-4 pb-6' : 'px-4 pb-4 sm:px-8 sm:pb-8'} ${showControls ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-full'
         }`}>
         {/* Bande noire qui commence en bas avec espace */}
         <div className={`absolute w-full transition-all bottom-0 left-0 right-0 bg-black z-10 ${isFullscreen ? 'h-[calc(100%-90px)]' : 'h-[calc(100%-140px)]'
           }`}></div>
 
         {/* Contrôles avec z-index plus élevé */}
-        <div className="relative z-20 p-8 pt-2">
-          <div className="flex flex-col w-full justify-between md:gap-1.5">
-            {/* Barre de progression et titre */}
-            <div className="flex justify-between mb-0" dir="ltr">
-              <div className="flex flex-row justify-between items-end w-full pointer-events-none">
-                <div className="w-full flex flex-col items-start">
-                  <span className="text-md sm:text-lg text-white drop-shadow-lg font-medium">{movie.title}</span>
-                </div>
-              </div>
-            </div>
+        <div className="relative z-20">
 
-            {/* Barre de progression interactive */}
-            <div className="flex items-center space-x-3 pointer-events-auto mb-0">
-              <div className="group relative w-full h-10 flex items-center cursor-pointer select-none"
+          {/* MOBILE CONTROLS (Simplifié: Temps + Slider) */}
+          <div className="block md:hidden px-4 pb-8 w-full pt-12 text-white">
+            <div className="flex flex-col gap-3">
+              <div className="flex justify-between items-center text-xs font-bold text-white/80 px-1">
+                <span>{formatTime(currentTime)}</span>
+                <span>{formatTime(duration)}</span>
+              </div>
+
+              <div className="relative w-full h-6 flex items-center"
                 onClick={(e) => {
                   const rect = e.currentTarget.getBoundingClientRect();
                   const clickX = e.clientX - rect.left;
@@ -877,518 +932,557 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
                   }
                 }}
               >
-                <div className="w-full h-1 bg-white/25 rounded-full overflow-hidden">
+                <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 rounded-full transition-all duration-200 ease-out"
+                    className="h-full bg-[#E50914] rounded-full"
                     style={{ width: `${(currentTime / duration) * 100}%` }}
                   ></div>
                 </div>
+                <div
+                  className="absolute h-3 w-3 bg-[#E50914] rounded-full shadow-md transform -translate-x-1/2 top-1.5"
+                  style={{ left: `${(currentTime / duration) * 100}%` }}
+                ></div>
               </div>
             </div>
+          </div>
 
-            {/* Contrôles principaux */}
-            <div className="flex justify-between pointer-events-auto" dir="ltr">
-              <div className="flex items-center gap-3">
-                {/* Bouton Play/Pause */}
-                <div className="flex items-center justify-center font-medium whitespace-nowrap relative overflow-hidden transition-all h-10 text-sm rounded-md cursor-pointer text-white bg-opacity-20 hover:bg-opacity-15 backdrop-blur-sm transform-gpu bg-white/5 py-0 px-0">
-                  <button className="w-full h-full px-3 py-2.5 cursor-pointer" onClick={(e) => {
-                    e.stopPropagation();
-                    togglePlay();
-                  }}>
-                    {isPlaying ? (
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-                        <path fillRule="evenodd" d="M6.75 5.25a.75.75 0 0 1 .75-.75H9a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H7.5a.75.75 0 0 1-.75-.75V5.25Zm7.5 0A.75.75 0 0 1 15 4.5h1.5a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H15a.75.75 0 0 1-.75-.75V5.25Z" clipRule="evenodd" />
-                      </svg>
-                    ) : (
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-                        <path fillRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" clipRule="evenodd" />
-                      </svg>
-                    )}
-                  </button>
+          {/* DESKTOP CONTROLS */}
+          <div className="hidden md:block p-8 pt-2">
+            <div className="flex flex-col w-full justify-between md:gap-1.5">
+              {/* Barre de progression et titre */}
+              <div className="flex justify-between mb-0" dir="ltr">
+                <div className="flex flex-row justify-between items-end w-full pointer-events-none">
+                  <div className="w-full flex flex-col items-start">
+                    <span className="text-md sm:text-lg text-white drop-shadow-lg font-medium">{movie.title}</span>
+                  </div>
                 </div>
+              </div>
 
-                {/* Contrôle du volume */}
-                <div
-                  className="relative"
-                  onMouseEnter={() => setShowVolumeSlider(true)}
-                  onMouseLeave={() => setShowVolumeSlider(false)}
+              {/* Barre de progression interactive */}
+              <div className="flex items-center space-x-3 pointer-events-auto mb-0">
+                <div className="group relative w-full h-10 flex items-center cursor-pointer select-none"
+                  onClick={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const clickX = e.clientX - rect.left;
+                    const percentage = (clickX / rect.width) * 100;
+                    if (videoRef.current) {
+                      videoRef.current.currentTime = (percentage / 100) * duration;
+                    }
+                  }}
                 >
-                  <div
-                    className="justify-center font-medium whitespace-nowrap relative overflow-hidden transition-all h-10 text-sm px-4 rounded-md text-white bg-opacity-20 hover:bg-opacity-15 backdrop-blur-sm transform-gpu bg-white/5 pointer-events-auto flex items-center py-0 pr-1"
-                  >
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleMute();
-                      }}
-                      className="pr-4 -ml-1 text-2xl text-white flex items-center cursor-pointer"
-                      aria-label={isMuted ? 'Activer le son' : 'Couper le son'}
-                    >
-                      {isMuted ? (
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-                          <path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"></path>
-                          <path d="M2 2l20 20"></path>
+                  <div className="w-full h-1 bg-white/25 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 rounded-full transition-all duration-200 ease-out"
+                      style={{ width: `${(currentTime / duration) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Contrôles principaux */}
+              <div className="flex justify-between pointer-events-auto" dir="ltr">
+                <div className="flex items-center gap-3">
+                  {/* Bouton Play/Pause */}
+                  <div className="flex items-center justify-center font-medium whitespace-nowrap relative overflow-hidden transition-all h-10 text-sm rounded-md cursor-pointer text-white bg-opacity-20 hover:bg-opacity-15 backdrop-blur-sm transform-gpu bg-white/5 py-0 px-0">
+                    <button className="w-full h-full px-3 py-2.5 cursor-pointer" onClick={(e) => {
+                      e.stopPropagation();
+                      togglePlay();
+                    }}>
+                      {isPlaying ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                          <path fillRule="evenodd" d="M6.75 5.25a.75.75 0 0 1 .75-.75H9a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H7.5a.75.75 0 0 1-.75-.75V5.25Zm7.5 0A.75.75 0 0 1 15 4.5h1.5a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H15a.75.75 0 0 1-.75-.75V5.25Z" clipRule="evenodd" />
                         </svg>
                       ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-                          <path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"></path>
-                          <path d="M16 9a5 5 0 0 1 0 6"></path>
-                          <path d="M19.364 18.364a9 9 0 0 0 0-12.728"></path>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                          <path fillRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" clipRule="evenodd" />
                         </svg>
                       )}
                     </button>
-
-                    {/* Slider de volume qui s'ouvre au hover */}
-                    <div className={`linear -ml-2 overflow-hidden transition-[width,opacity,padding] duration-300 ${showVolumeSlider ? 'w-24 opacity-100 px-2' : 'w-0 opacity-0 px-0'
-                      }`}>
-                      <div className="flex h-10 w-full items-center">
-                        <div
-                          className="relative h-1 flex-1 rounded-full bg-white bg-opacity-25 cursor-pointer"
-                        >
-                          <div className="absolute inset-y-0 left-0 flex items-center justify-end rounded-full bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500" style={{ width: `${isMuted ? 0 : volume * 100}%` }}>
-                            <div className="absolute h-3 w-3 translate-x-1/2 rounded-full bg-white"></div>
-                          </div>
-                          <input
-                            type="range"
-                            min="0"
-                            max="1"
-                            step="0.01"
-                            value={volume}
-                            onChange={(e) => {
-                              const newVolume = parseFloat(e.target.value);
-                              setVolume(newVolume);
-                              // Respecter l’état muet: ne pas appliquer au <video> quand isMuted est vrai
-                              if (videoRef.current) {
-                                if (isMuted) {
-                                  if (newVolume > 0) setLastNonMutedVolume(newVolume);
-                                } else {
-                                  videoRef.current.volume = newVolume;
-                                  if (newVolume > 0) setLastNonMutedVolume(newVolume);
-                                }
-                              } else if (newVolume > 0) {
-                                setLastNonMutedVolume(newVolume);
-                              }
-                              // Ne jamais modifier isMuted ici; seulement via l’icône
-                            }}
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                          />
-                        </div>
-                      </div>
-                    </div>
                   </div>
 
-
-                </div>
-
-                <div className="w-px mx-1 h-5 bg-white/25"></div>
-
-                {/* Boutons Skip */}
-                <button className="flex items-center justify-center font-medium whitespace-nowrap relative overflow-hidden transition-all h-10 text-sm px-4 rounded-md cursor-pointer text-white bg-opacity-20 hover:bg-opacity-15 backdrop-blur-sm transform-gpu bg-white/5" onClick={(e) => {
-                  e.stopPropagation();
-                  skipTime(-10);
-                }}>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
-                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
-                    <path d="M3 3v5h5"></path>
-                  </svg>
-                  <span className="ml-1 text-xs font-medium">10</span>
-                </button>
-
-                <button className="flex items-center justify-center font-medium whitespace-nowrap relative overflow-hidden transition-all h-10 text-sm px-4 rounded-md cursor-pointer text-white bg-opacity-20 hover:bg-opacity-15 backdrop-blur-sm transform-gpu bg-white/5" onClick={(e) => {
-                  e.stopPropagation();
-                  skipTime(10);
-                }}>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
-                    <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path>
-                    <path d="M21 3v5h-5"></path>
-                  </svg>
-                  <span className="ml-1 text-xs font-medium">10</span>
-                </button>
-
-                <div className="w-px mx-1 h-5 bg-white/25"></div>
-
-                {/* Affichage du temps */}
-                <button className="justify-center font-medium whitespace-nowrap relative overflow-hidden transition-all h-10 text-sm px-4 rounded-md text-white bg-opacity-20 hover:bg-opacity-15 backdrop-blur-sm transform-gpu bg-white/5 flex items-center cursor-auto">
-                  <div className="text-sm" data-type="current">{formatTime(currentTime)}</div>
-                  <div className="mx-1 text-white/50 text-sm">/</div>
-                  <div className="text-sm" data-type="duration">{formatTime(duration)}</div>
-                </button>
-              </div>
-
-              {/* Contrôles de droite */}
-              <div className="flex items-center gap-3">
-
-
-                {/* Sous-titres & Audio */}
-                <div className={`relative ${showSubtitles ? 'z-50' : ''}`}>
-                  <button
-                    type="button"
-                    className="flex items-center justify-center font-medium whitespace-nowrap overflow-hidden transition-all h-10 text-sm rounded-md cursor-pointer text-white bg-opacity-20 hover:bg-opacity-15 backdrop-blur-sm transform-gpu bg-white/5 px-3 relative"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      toggleSubtitles();
-                    }}
+                  {/* Contrôle du volume */}
+                  <div
+                    className="relative"
+                    onMouseEnter={() => setShowVolumeSlider(true)}
+                    onMouseLeave={() => setShowVolumeSlider(false)}
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
-                      <rect width="18" height="14" x="3" y="5" rx="2" ry="2"></rect>
-                      <path d="M7 15h4M15 15h2M7 11h2M13 11h4"></path>
-                    </svg>
-                  </button>
+                    <div
+                      className="justify-center font-medium whitespace-nowrap relative overflow-hidden transition-all h-10 text-sm px-4 rounded-md text-white bg-opacity-20 hover:bg-opacity-15 backdrop-blur-sm transform-gpu bg-white/5 pointer-events-auto flex items-center py-0 pr-1"
+                    >
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleMute();
+                        }}
+                        className="pr-4 -ml-1 text-2xl text-white flex items-center cursor-pointer"
+                        aria-label={isMuted ? 'Activer le son' : 'Couper le son'}
+                      >
+                        {isMuted ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                            <path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"></path>
+                            <path d="M2 2l20 20"></path>
+                          </svg>
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                            <path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"></path>
+                            <path d="M16 9a5 5 0 0 1 0 6"></path>
+                            <path d="M19.364 18.364a9 9 0 0 0 0-12.728"></path>
+                          </svg>
+                        )}
+                      </button>
 
-                  {/* Menu des sous-titres */}
-                  {showSubtitles && (
-                    <div className="absolute bottom-full right-0 mb-2 z-[9999] min-w-[300px]" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex flex-col rounded-lg border border-white/10 bg-black/80 backdrop-blur-sm px-5 py-4 font-sans shadow-xl">
-                        {/* Titre */}
-                        <div className="font-medium text-white/90 text-base pt-0 px-0 border-b pb-3 border-white/10">
-                          Audio & Sous-titres
-                        </div>
-
-                        {/* Options */}
-                        <div className="pt-4 w-full">
-                          <div className="w-full flex flex-col space-y-1">
-
-                            {/* Section Audio */}
-                            <div className="text-xs font-semibold text-white/50 uppercase mb-2 px-3">Audio</div>
-
-                            {hasAudio && audioTracks && audioTracks.length > 0 ? (
-                              audioTracks.map((track: any, index: number) => {
-                                const id = typeof track?.id === 'number' ? track.id : index;
-                                const lang = (track?.lang || track?.language || track?.name || '').toString().toLowerCase();
-                                let label = 'Piste ' + (index + 1);
-                                if (lang.includes('fr')) label = 'Français';
-                                else if (lang.includes('en')) label = 'Anglais';
-                                else if (track?.name) label = track.name;
-                                else if (track?.lang) label = track.lang.toUpperCase();
-                                const codec = (track?.codec || '').toString();
-                                const supported = track?.codecSupported !== false;
-                                const codecTag = codec ? `${codec.toUpperCase()}${supported ? '' : ' - non supporté'}` : '';
-                                const displayLabel = codecTag ? `${label} (${codecTag})` : label;
-                                const isSelected = selectedAudioId === id;
-                                return (
-                                  <button
-                                    key={`aud-${id}`}
-                                    className={`flex items-center font-medium whitespace-nowrap relative overflow-hidden transition-all h-10 text-sm px-4 sm:h-12 sm:text-base sm:px-5 rounded-md sm:rounded-lg cursor-pointer justify-between -ml-3 !px-3 !w-[calc(100%+1.5rem)] !py-2.5 !h-auto hover:bg-white/5 ${supported ? '' : 'opacity-50 cursor-not-allowed'}`}
-                                    disabled={!supported}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      if (!supported) return;
-                                      if (hlsRef.current) {
-                                        try {
-                                          const hlsAny = hlsRef.current as any;
-                                          hlsAny.audioTrack = id;
-                                        } catch { }
-                                      }
-                                      setSelectedAudioId(id);
-                                      try {
-                                        localStorage.setItem('selectedAudioId', String(id));
-                                      } catch { }
-                                      // On ne ferme pas le menu pour permettre de changer les sous-titres aussi
-                                    }}
-                                  >
-                                    <div className="flex items-center flex-1">
-                                      <div className="flex-1 text-left text-white hover:text-white">
-                                        {displayLabel}
-                                      </div>
-                                      {isSelected && (
-                                        <div className="flex">
-                                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="w-5 h-5 text-blue-400">
-                                            <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clipRule="evenodd"></path>
-                                          </svg>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </button>
-                                );
-                              })
-                            ) : (
-                              <div className="px-3 py-2 text-white/50 text-sm">Aucune piste détectée</div>
-                            )}
-
-                            <div className="h-px w-full bg-white/10 my-2"></div>
-
-                            {/* Section Sous-titres */}
-                            <div className="text-xs font-semibold text-white/50 uppercase mb-2 px-3">Sous-titres</div>
-
-                            {/* Option: Désactivés */}
-                            <button
-                              className="flex items-center font-medium whitespace-nowrap relative overflow-hidden transition-all h-10 text-sm px-4 sm:h-12 sm:text-base sm:px-5 rounded-md sm:rounded-lg cursor-pointer justify-between -ml-3 !px-3 !w-[calc(100%+1.5rem)] !py-2.5 !h-auto hover:bg-white/5"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (hlsRef.current) {
-                                  const hlsAny = hlsRef.current as any;
-                                  hlsAny.subtitleDisplay = false;
-                                  setSubtitlesEnabled(false);
-                                  setSelectedSubtitleId(-1);
+                      {/* Slider de volume qui s'ouvre au hover */}
+                      <div className={`linear -ml-2 overflow-hidden transition-[width,opacity,padding] duration-300 ${showVolumeSlider ? 'w-24 opacity-100 px-2' : 'w-0 opacity-0 px-0'
+                        }`}>
+                        <div className="flex h-10 w-full items-center">
+                          <div
+                            className="relative h-1 flex-1 rounded-full bg-white bg-opacity-25 cursor-pointer"
+                          >
+                            <div className="absolute inset-y-0 left-0 flex items-center justify-end rounded-full bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500" style={{ width: `${isMuted ? 0 : volume * 100}%` }}>
+                              <div className="absolute h-3 w-3 translate-x-1/2 rounded-full bg-white"></div>
+                            </div>
+                            <input
+                              type="range"
+                              min="0"
+                              max="1"
+                              step="0.01"
+                              value={volume}
+                              onChange={(e) => {
+                                const newVolume = parseFloat(e.target.value);
+                                setVolume(newVolume);
+                                // Respecter l’état muet: ne pas appliquer au <video> quand isMuted est vrai
+                                if (videoRef.current) {
+                                  if (isMuted) {
+                                    if (newVolume > 0) setLastNonMutedVolume(newVolume);
+                                  } else {
+                                    videoRef.current.volume = newVolume;
+                                    if (newVolume > 0) setLastNonMutedVolume(newVolume);
+                                  }
+                                } else if (newVolume > 0) {
+                                  setLastNonMutedVolume(newVolume);
                                 }
-                                setShowSubtitles(false);
+                                // Ne jamais modifier isMuted ici; seulement via l’icône
                               }}
-                            >
-                              <div className="flex items-center flex-1">
-                                <div className="flex-1 text-left text-white/50 hover:text-white">
-                                  Désactivés
-                                </div>
-                                {(!subtitlesEnabled || selectedSubtitleId === -1) && (
-                                  <div className="flex">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="w-5 h-5 text-blue-400">
-                                      <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clipRule="evenodd"></path>
-                                    </svg>
-                                  </div>
-                                )}
-                              </div>
-                            </button>
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
 
-                            {/* Liste des pistes disponibles */}
-                            {subtitleTracks && subtitleTracks.length > 0 ? (
-                              subtitleTracks.map((track: any, index: number) => {
-                                const id = typeof track?.id === 'number' ? track.id : index;
-                                const label = track?.name || track?.lang || `Piste ${index + 1}`;
-                                const isSelected = subtitlesEnabled && selectedSubtitleId === id;
-                                return (
-                                  <button
-                                    key={`sub-${id}`}
-                                    className="flex items-center font-medium whitespace-nowrap relative overflow-hidden transition-all h-10 text-sm px-4 sm:h-12 sm:text-base sm:px-5 rounded-md sm:rounded-lg cursor-pointer justify-between -ml-3 !px-3 !w-[calc(100%+1.5rem)] !py-2.5 !h-auto hover:bg-white/5"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      if (hlsRef.current) {
+
+                  </div>
+
+                  <div className="w-px mx-1 h-5 bg-white/25"></div>
+
+                  {/* Boutons Skip */}
+                  <button className="flex items-center justify-center font-medium whitespace-nowrap relative overflow-hidden transition-all h-10 text-sm px-4 rounded-md cursor-pointer text-white bg-opacity-20 hover:bg-opacity-15 backdrop-blur-sm transform-gpu bg-white/5" onClick={(e) => {
+                    e.stopPropagation();
+                    skipTime(-10);
+                  }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+                      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                      <path d="M3 3v5h5"></path>
+                    </svg>
+                    <span className="ml-1 text-xs font-medium">10</span>
+                  </button>
+
+                  <button className="flex items-center justify-center font-medium whitespace-nowrap relative overflow-hidden transition-all h-10 text-sm px-4 rounded-md cursor-pointer text-white bg-opacity-20 hover:bg-opacity-15 backdrop-blur-sm transform-gpu bg-white/5" onClick={(e) => {
+                    e.stopPropagation();
+                    skipTime(10);
+                  }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+                      <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path>
+                      <path d="M21 3v5h-5"></path>
+                    </svg>
+                    <span className="ml-1 text-xs font-medium">10</span>
+                  </button>
+
+                  <div className="w-px mx-1 h-5 bg-white/25"></div>
+
+                  {/* Affichage du temps */}
+                  <button className="justify-center font-medium whitespace-nowrap relative overflow-hidden transition-all h-10 text-sm px-4 rounded-md text-white bg-opacity-20 hover:bg-opacity-15 backdrop-blur-sm transform-gpu bg-white/5 flex items-center cursor-auto">
+                    <div className="text-sm" data-type="current">{formatTime(currentTime)}</div>
+                    <div className="mx-1 text-white/50 text-sm">/</div>
+                    <div className="text-sm" data-type="duration">{formatTime(duration)}</div>
+                  </button>
+                </div>
+
+                {/* Contrôles de droite */}
+                <div className="flex items-center gap-3">
+
+
+                  {/* Sous-titres & Audio */}
+                  <div className={`relative ${showSubtitles ? 'z-50' : ''}`}>
+                    <button
+                      type="button"
+                      className="flex items-center justify-center font-medium whitespace-nowrap overflow-hidden transition-all h-10 text-sm rounded-md cursor-pointer text-white bg-opacity-20 hover:bg-opacity-15 backdrop-blur-sm transform-gpu bg-white/5 px-3 relative"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleSubtitles();
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+                        <rect width="18" height="14" x="3" y="5" rx="2" ry="2"></rect>
+                        <path d="M7 15h4M15 15h2M7 11h2M13 11h4"></path>
+                      </svg>
+                    </button>
+
+                    {/* Menu des sous-titres */}
+                    {showSubtitles && (
+                      <div className="absolute bottom-full right-0 mb-2 z-[9999] min-w-[300px]" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex flex-col rounded-lg border border-white/10 bg-black/80 backdrop-blur-sm px-5 py-4 font-sans shadow-xl">
+                          {/* Titre */}
+                          <div className="font-medium text-white/90 text-base pt-0 px-0 border-b pb-3 border-white/10">
+                            Audio & Sous-titres
+                          </div>
+
+                          {/* Options */}
+                          <div className="pt-4 w-full">
+                            <div className="w-full flex flex-col space-y-1">
+
+                              {/* Section Audio */}
+                              <div className="text-xs font-semibold text-white/50 uppercase mb-2 px-3">Audio</div>
+
+                              {hasAudio && audioTracks && audioTracks.length > 0 ? (
+                                audioTracks.map((track: any, index: number) => {
+                                  const id = typeof track?.id === 'number' ? track.id : index;
+                                  const lang = (track?.lang || track?.language || track?.name || '').toString().toLowerCase();
+                                  let label = 'Piste ' + (index + 1);
+                                  if (lang.includes('fr')) label = 'Français';
+                                  else if (lang.includes('en')) label = 'Anglais';
+                                  else if (track?.name) label = track.name;
+                                  else if (track?.lang) label = track.lang.toUpperCase();
+                                  const codec = (track?.codec || '').toString();
+                                  const supported = track?.codecSupported !== false;
+                                  const codecTag = codec ? `${codec.toUpperCase()}${supported ? '' : ' - non supporté'}` : '';
+                                  const displayLabel = codecTag ? `${label} (${codecTag})` : label;
+                                  const isSelected = selectedAudioId === id;
+                                  return (
+                                    <button
+                                      key={`aud-${id}`}
+                                      className={`flex items-center font-medium whitespace-nowrap relative overflow-hidden transition-all h-10 text-sm px-4 sm:h-12 sm:text-base sm:px-5 rounded-md sm:rounded-lg cursor-pointer justify-between -ml-3 !px-3 !w-[calc(100%+1.5rem)] !py-2.5 !h-auto hover:bg-white/5 ${supported ? '' : 'opacity-50 cursor-not-allowed'}`}
+                                      disabled={!supported}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (!supported) return;
+                                        if (hlsRef.current) {
+                                          try {
+                                            const hlsAny = hlsRef.current as any;
+                                            hlsAny.audioTrack = id;
+                                          } catch { }
+                                        }
+                                        setSelectedAudioId(id);
                                         try {
-                                          const hlsAny = hlsRef.current as any;
-                                          hlsAny.subtitleDisplay = true;
-                                          hlsAny.subtitleTrack = id;
+                                          localStorage.setItem('selectedAudioId', String(id));
                                         } catch { }
-                                      }
-                                      setSubtitlesEnabled(true);
-                                      setSelectedSubtitleId(id);
-                                      setShowSubtitles(false);
-                                    }}
-                                  >
-                                    <div className="flex items-center flex-1">
-                                      <div className="flex-1 text-left text-white hover:text-white">
-                                        {label}
-                                      </div>
-                                      {isSelected && (
-                                        <div className="flex">
-                                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="w-5 h-5 text-blue-400">
-                                            <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clipRule="evenodd"></path>
-                                          </svg>
+                                        // On ne ferme pas le menu pour permettre de changer les sous-titres aussi
+                                      }}
+                                    >
+                                      <div className="flex items-center flex-1">
+                                        <div className="flex-1 text-left text-white hover:text-white">
+                                          {displayLabel}
                                         </div>
-                                      )}
+                                        {isSelected && (
+                                          <div className="flex">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="w-5 h-5 text-blue-400">
+                                              <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clipRule="evenodd"></path>
+                                            </svg>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </button>
+                                  );
+                                })
+                              ) : (
+                                <div className="px-3 py-2 text-white/50 text-sm">Aucune piste détectée</div>
+                              )}
+
+                              <div className="h-px w-full bg-white/10 my-2"></div>
+
+                              {/* Section Sous-titres */}
+                              <div className="text-xs font-semibold text-white/50 uppercase mb-2 px-3">Sous-titres</div>
+
+                              {/* Option: Désactivés */}
+                              <button
+                                className="flex items-center font-medium whitespace-nowrap relative overflow-hidden transition-all h-10 text-sm px-4 sm:h-12 sm:text-base sm:px-5 rounded-md sm:rounded-lg cursor-pointer justify-between -ml-3 !px-3 !w-[calc(100%+1.5rem)] !py-2.5 !h-auto hover:bg-white/5"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (hlsRef.current) {
+                                    const hlsAny = hlsRef.current as any;
+                                    hlsAny.subtitleDisplay = false;
+                                    setSubtitlesEnabled(false);
+                                    setSelectedSubtitleId(-1);
+                                  }
+                                  setShowSubtitles(false);
+                                }}
+                              >
+                                <div className="flex items-center flex-1">
+                                  <div className="flex-1 text-left text-white/50 hover:text-white">
+                                    Désactivés
+                                  </div>
+                                  {(!subtitlesEnabled || selectedSubtitleId === -1) && (
+                                    <div className="flex">
+                                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="w-5 h-5 text-blue-400">
+                                        <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clipRule="evenodd"></path>
+                                      </svg>
                                     </div>
-                                  </button>
-                                );
-                              })
-                            ) : (
-                              <div className="px-3 py-2 text-white/50 text-sm">Aucune piste détectée</div>
-                            )}
+                                  )}
+                                </div>
+                              </button>
+
+                              {/* Liste des pistes disponibles */}
+                              {subtitleTracks && subtitleTracks.length > 0 ? (
+                                subtitleTracks.map((track: any, index: number) => {
+                                  const id = typeof track?.id === 'number' ? track.id : index;
+                                  const label = track?.name || track?.lang || `Piste ${index + 1}`;
+                                  const isSelected = subtitlesEnabled && selectedSubtitleId === id;
+                                  return (
+                                    <button
+                                      key={`sub-${id}`}
+                                      className="flex items-center font-medium whitespace-nowrap relative overflow-hidden transition-all h-10 text-sm px-4 sm:h-12 sm:text-base sm:px-5 rounded-md sm:rounded-lg cursor-pointer justify-between -ml-3 !px-3 !w-[calc(100%+1.5rem)] !py-2.5 !h-auto hover:bg-white/5"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (hlsRef.current) {
+                                          try {
+                                            const hlsAny = hlsRef.current as any;
+                                            hlsAny.subtitleDisplay = true;
+                                            hlsAny.subtitleTrack = id;
+                                          } catch { }
+                                        }
+                                        setSubtitlesEnabled(true);
+                                        setSelectedSubtitleId(id);
+                                        setShowSubtitles(false);
+                                      }}
+                                    >
+                                      <div className="flex items-center flex-1">
+                                        <div className="flex-1 text-left text-white hover:text-white">
+                                          {label}
+                                        </div>
+                                        {isSelected && (
+                                          <div className="flex">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="w-5 h-5 text-blue-400">
+                                              <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clipRule="evenodd"></path>
+                                            </svg>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </button>
+                                  );
+                                })
+                              ) : (
+                                <div className="px-3 py-2 text-white/50 text-sm">Aucune piste détectée</div>
+                              )}
+                            </div>
+
+
                           </div>
 
-
-                        </div>
-
-                        {/* Note d'aide */}
-                        <span className="text-sm leading-4 italic mt-4 text-white/35 max-w-[300px] border-t pt-3 border-white/10">
-                          Clique sur la touche "C" pour activer / désactiver rapidement les sous-titres
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Le bouton audio a été supprimé et intégré dans le menu des sous-titres */}
-                {/* Le menu audio a été intégré dans le menu des sous-titres */}
-
-                {/* Sources (Qualité) */}
-                <div className="relative">
-                  <button
-                    type="button"
-                    className="flex items-center justify-center font-medium whitespace-nowrap relative overflow-hidden transition-all h-10 text-sm rounded-md cursor-pointer text-white bg-opacity-20 hover:bg-opacity-15 backdrop-blur-sm transform-gpu bg-white/5 px-3"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleSources();
-                    }}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6 mr-2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15a4.5 4.5 0 0 0 4.5 4.5H18a3.75 3.75 0 0 0 1.332-7.257 3 3 0 0 0-3.758-3.848 5.25 5.25 0 0 0-10.233 2.33A4.502 4.502 0 0 0 2.25 15Z"></path>
-                    </svg>
-                    <span className="text-white text-xs leading-3 font-semibold rounded-sm">{currentQualityLabel}</span>
-                  </button>
-
-                  {/* Menu des sources */}
-                  {showSources && (
-                    <div className="absolute bottom-full right-0 mb-8 z-[9999] min-w-[300px]">
-                      <div className="flex flex-col rounded-lg border border-white/10 bg-black/80 backdrop-blur-sm px-5 py-4 font-sans shadow-xl">
-                        {/* Titre */}
-                        <div className="font-medium text-white text-base pt-0 px-0 border-b pb-3 border-white/10">
-                          Sources disponibles
-                        </div>
-
-                        {/* Liste des sources */}
-                        <div className="pt-4 w-full">
-                          <div className="flex items-center justify-between py-2">
-                            <span className="text-white">Aucune source disponible</span>
-                          </div>
+                          {/* Note d'aide */}
+                          <span className="text-sm leading-4 italic mt-4 text-white/35 max-w-[300px] border-t pt-3 border-white/10">
+                            Clique sur la touche "C" pour activer / désactiver rapidement les sous-titres
+                          </span>
                         </div>
                       </div>
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </div>
 
-                {/* Paramètres */}
-                <div className="relative">
-                  <button
-                    type="button"
-                    className="flex items-center justify-center font-medium whitespace-nowrap relative overflow-hidden transition-all h-10 text-sm rounded-md cursor-pointer text-white bg-opacity-20 hover:bg-opacity-15 backdrop-blur-sm transform-gpu bg-white/5 px-3"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleSettings();
-                    }}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-                      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
-                      <circle cx="12" cy="12" r="3"></circle>
-                    </svg>
-                  </button>
+                  {/* Le bouton audio a été supprimé et intégré dans le menu des sous-titres */}
+                  {/* Le menu audio a été intégré dans le menu des sous-titres */}
 
-                  {/* Menu des paramètres */}
-                  {showSettings && (
-                    <div className="absolute bottom-full -right-8 mb-8 z-[9999] min-w-[300px]">
-                      {!showSpeedCard ? (
-                        // Carte principale des paramètres
+                  {/* Sources (Qualité) */}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      className="flex items-center justify-center font-medium whitespace-nowrap relative overflow-hidden transition-all h-10 text-sm rounded-md cursor-pointer text-white bg-opacity-20 hover:bg-opacity-15 backdrop-blur-sm transform-gpu bg-white/5 px-3"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleSources();
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6 mr-2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15a4.5 4.5 0 0 0 4.5 4.5H18a3.75 3.75 0 0 0 1.332-7.257 3 3 0 0 0-3.758-3.848 5.25 5.25 0 0 0-10.233 2.33A4.502 4.502 0 0 0 2.25 15Z"></path>
+                      </svg>
+                      <span className="text-white text-xs leading-3 font-semibold rounded-sm">{currentQualityLabel}</span>
+                    </button>
+
+                    {/* Menu des sources */}
+                    {showSources && (
+                      <div className="absolute bottom-full right-0 mb-8 z-[9999] min-w-[300px]">
                         <div className="flex flex-col rounded-lg border border-white/10 bg-black/80 backdrop-blur-sm px-5 py-4 font-sans shadow-xl">
                           {/* Titre */}
                           <div className="font-medium text-white text-base pt-0 px-0 border-b pb-3 border-white/10">
-                            Paramètres
+                            Sources disponibles
                           </div>
 
-                          {/* Section Vitesse de lecture */}
-                          <div
-                            className="flex items-center justify-between py-3 px-3 hover:bg-white/5 cursor-pointer transition-colors rounded"
-                            onClick={(e) => {
-                              e.stopPropagation(); // Empêcher la propagation du clic
-                              setShowSpeedCard(true);
-                            }}
-                          >
-                            <span className="text-white">Vitesse de lecture</span>
-                            <div className="flex items-center gap-2">
-                              <span className="text-white">{currentSpeed === 1 ? 'normale' : `${currentSpeed}x`}</span>
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-white">
-                                <path d="m9 18 6-6-6-6" />
-                              </svg>
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        // Carte de vitesse de lecture
-                        <div className="flex flex-col rounded-lg border border-white/10 bg-black/80 backdrop-blur-sm px-5 py-4 font-sans shadow-xl">
-                          {/* En-tête avec flèche de retour */}
-                          <div className="flex items-center gap-3 pb-3 border-b border-white/10">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation(); // Empêcher la propagation du clic
-                                setShowSpeedCard(false);
-                              }}
-                              className="flex items-center justify-center w-8 h-8 rounded bg-white/10 hover:bg-white/20 transition-colors"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-white">
-                                <path d="m15 18-6-6 6-6" />
-                              </svg>
-                            </button>
-                            <span className="font-medium text-white text-base">Vitesse de lecture</span>
-                          </div>
-
-                          {/* Liste des vitesses */}
+                          {/* Liste des sources */}
                           <div className="pt-4 w-full">
-                            {['0.25x', '0.5x', '0.75x', 'Normal', '1.25x', '1.5x', '1.75x', '2x'].map((speed) => (
-                              <div key={speed} className="flex items-center justify-between py-3 px-3 hover:bg-white/5 cursor-pointer transition-colors rounded">
-                                <span className="text-white">{speed}</span>
-                                {speed === 'Normal' && (
-                                  <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 text-blue-400">
-                                      <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clipRule="evenodd"></path>
-                                    </svg>
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                <div className="w-px mx-1 h-5 bg-white/25"></div>
-
-                {/* Cast (désactivé) */}
-                <button className="flex items-center justify-center font-medium whitespace-nowrap relative overflow-hidden transition-all h-10 text-sm px-4 rounded-md cursor-pointer text-white bg-opacity-20 hover:bg-opacity-15 backdrop-blur-sm transform-gpu bg-white/5 opacity-50">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-                    <path d="M2 8V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6"></path>
-                    <path d="M2 12a9 9 0 0 1 8 8"></path>
-                    <path d="M2 16a5 5 0 0 1 4 4"></path>
-                    <line x1="2" x2="2.01" y1="20" y2="20"></line>
-                  </svg>
-                </button>
-
-                {/* Picture in Picture */}
-                <div className="relative">
-                  <div className="flex items-center justify-center font-medium whitespace-nowrap relative overflow-hidden transition-all h-10 text-sm rounded-md cursor-not-allowed text-white/50 bg-opacity-20 hover:bg-opacity-15 backdrop-blur-sm transform-gpu bg-white/5 px-0 py-0 opacity-50">
-                    <div className="w-full h-full px-3 flex items-center justify-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
-                        <path d="M21 9V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10c0 1.1.9 2 2 2h4"></path>
-                        <rect width="10" height="7" x="12" y="13" rx="2"></rect>
-                      </svg>
-                    </div>
-                  </div>
-
-                  {/* Menu PiP */}
-                  {showPiP && (
-                    <div className="absolute bottom-full right-0 mb-8 z-[9999] min-w-[300px]">
-                      <div className="flex flex-col rounded-lg border border-white/10 bg-black/80 backdrop-blur-sm px-5 py-4 font-sans shadow-xl">
-                        {/* Titre */}
-                        <div className="font-medium text-white/90 text-base pt-0 px-0 border-b pb-3 border-white/10">
-                          Picture in Picture
-                        </div>
-
-                        {/* Message de fonctionnalité non disponible */}
-                        <div className="pt-4 w-full">
-                          <div className="text-center py-8">
-                            <div className="text-white/70 text-lg font-medium mb-2">
-                              Fonctionnalité
-                            </div>
-                            <div className="text-white/50 text-sm">
-                              non encore disponible
+                            <div className="flex items-center justify-between py-2">
+                              <span className="text-white">Aucune source disponible</span>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Fullscreen */}
-                <div className="flex items-center justify-center font-medium whitespace-nowrap relative overflow-hidden transition-all h-10 text-sm rounded-md cursor-pointer text-white bg-opacity-20 hover:bg-opacity-15 backdrop-blur-sm transform-gpu bg-white/5 px-0 py-0">
-                  <button className="w-full h-full px-3" onClick={(e) => {
-                    e.stopPropagation();
-                    toggleFullscreen();
-                  }}>
-                    {isFullscreen ? (
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
-                        <path d="M8 3v3a2 2 0 0 1-2 2H3"></path>
-                        <path d="M21 8v-3a2 2 0 0 0-2-2h-3"></path>
-                        <path d="M3 16v3a2 2 0 0 0 2 2h3"></path>
-                        <path d="M16 21h3a2 2 0 0 0 2-2v-3"></path>
-                      </svg>
-                    ) : (
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
-                        <path d="M8 3H5a2 2 0 0 0-2 2v3"></path>
-                        <path d="M21 8V5a2 2 0 0 0-2-2h-3"></path>
-                        <path d="M3 16v3a2 2 0 0 0 2 2h3"></path>
-                        <path d="M16 21h3a2 2 0 0 0 2-2v-3"></path>
-                      </svg>
                     )}
+                  </div>
+
+                  {/* Paramètres */}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      className="flex items-center justify-center font-medium whitespace-nowrap relative overflow-hidden transition-all h-10 text-sm rounded-md cursor-pointer text-white bg-opacity-20 hover:bg-opacity-15 backdrop-blur-sm transform-gpu bg-white/5 px-3"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleSettings();
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                      </svg>
+                    </button>
+
+                    {/* Menu des paramètres */}
+                    {showSettings && (
+                      <div className="absolute bottom-full -right-8 mb-8 z-[9999] min-w-[300px]">
+                        {!showSpeedCard ? (
+                          // Carte principale des paramètres
+                          <div className="flex flex-col rounded-lg border border-white/10 bg-black/80 backdrop-blur-sm px-5 py-4 font-sans shadow-xl">
+                            {/* Titre */}
+                            <div className="font-medium text-white text-base pt-0 px-0 border-b pb-3 border-white/10">
+                              Paramètres
+                            </div>
+
+                            {/* Section Vitesse de lecture */}
+                            <div
+                              className="flex items-center justify-between py-3 px-3 hover:bg-white/5 cursor-pointer transition-colors rounded"
+                              onClick={(e) => {
+                                e.stopPropagation(); // Empêcher la propagation du clic
+                                setShowSpeedCard(true);
+                              }}
+                            >
+                              <span className="text-white">Vitesse de lecture</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-white">{currentSpeed === 1 ? 'normale' : `${currentSpeed}x`}</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-white">
+                                  <path d="m9 18 6-6-6-6" />
+                                </svg>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          // Carte de vitesse de lecture
+                          <div className="flex flex-col rounded-lg border border-white/10 bg-black/80 backdrop-blur-sm px-5 py-4 font-sans shadow-xl">
+                            {/* En-tête avec flèche de retour */}
+                            <div className="flex items-center gap-3 pb-3 border-b border-white/10">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation(); // Empêcher la propagation du clic
+                                  setShowSpeedCard(false);
+                                }}
+                                className="flex items-center justify-center w-8 h-8 rounded bg-white/10 hover:bg-white/20 transition-colors"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-white">
+                                  <path d="m15 18-6-6 6-6" />
+                                </svg>
+                              </button>
+                              <span className="font-medium text-white text-base">Vitesse de lecture</span>
+                            </div>
+
+                            {/* Liste des vitesses */}
+                            <div className="pt-4 w-full">
+                              {['0.25x', '0.5x', '0.75x', 'Normal', '1.25x', '1.5x', '1.75x', '2x'].map((speed) => (
+                                <div key={speed} className="flex items-center justify-between py-3 px-3 hover:bg-white/5 cursor-pointer transition-colors rounded">
+                                  <span className="text-white">{speed}</span>
+                                  {speed === 'Normal' && (
+                                    <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
+                                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 text-blue-400">
+                                        <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clipRule="evenodd"></path>
+                                      </svg>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="w-px mx-1 h-5 bg-white/25"></div>
+
+                  {/* Cast (désactivé) */}
+                  <button className="flex items-center justify-center font-medium whitespace-nowrap relative overflow-hidden transition-all h-10 text-sm px-4 rounded-md cursor-pointer text-white bg-opacity-20 hover:bg-opacity-15 backdrop-blur-sm transform-gpu bg-white/5 opacity-50">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                      <path d="M2 8V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6"></path>
+                      <path d="M2 12a9 9 0 0 1 8 8"></path>
+                      <path d="M2 16a5 5 0 0 1 4 4"></path>
+                      <line x1="2" x2="2.01" y1="20" y2="20"></line>
+                    </svg>
                   </button>
+
+                  {/* Picture in Picture */}
+                  <div className="relative">
+                    <div className="flex items-center justify-center font-medium whitespace-nowrap relative overflow-hidden transition-all h-10 text-sm rounded-md cursor-not-allowed text-white/50 bg-opacity-20 hover:bg-opacity-15 backdrop-blur-sm transform-gpu bg-white/5 px-0 py-0 opacity-50">
+                      <div className="w-full h-full px-3 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+                          <path d="M21 9V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10c0 1.1.9 2 2 2h4"></path>
+                          <rect width="10" height="7" x="12" y="13" rx="2"></rect>
+                        </svg>
+                      </div>
+                    </div>
+
+                    {/* Menu PiP */}
+                    {showPiP && (
+                      <div className="absolute bottom-full right-0 mb-8 z-[9999] min-w-[300px]">
+                        <div className="flex flex-col rounded-lg border border-white/10 bg-black/80 backdrop-blur-sm px-5 py-4 font-sans shadow-xl">
+                          {/* Titre */}
+                          <div className="font-medium text-white/90 text-base pt-0 px-0 border-b pb-3 border-white/10">
+                            Picture in Picture
+                          </div>
+
+                          {/* Message de fonctionnalité non disponible */}
+                          <div className="pt-4 w-full">
+                            <div className="text-center py-8">
+                              <div className="text-white/70 text-lg font-medium mb-2">
+                                Fonctionnalité
+                              </div>
+                              <div className="text-white/50 text-sm">
+                                non encore disponible
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Fullscreen */}
+                  <div className="flex items-center justify-center font-medium whitespace-nowrap relative overflow-hidden transition-all h-10 text-sm rounded-md cursor-pointer text-white bg-opacity-20 hover:bg-opacity-15 backdrop-blur-sm transform-gpu bg-white/5 px-0 py-0">
+                    <button className="w-full h-full px-3" onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFullscreen();
+                    }}>
+                      {isFullscreen ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+                          <path d="M8 3v3a2 2 0 0 1-2 2H3"></path>
+                          <path d="M21 8v-3a2 2 0 0 0-2-2h-3"></path>
+                          <path d="M3 16v3a2 2 0 0 0 2 2h3"></path>
+                          <path d="M16 21h3a2 2 0 0 0 2-2v-3"></path>
+                        </svg>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+                          <path d="M8 3H5a2 2 0 0 0-2 2v3"></path>
+                          <path d="M21 8V5a2 2 0 0 0-2-2h-3"></path>
+                          <path d="M3 16v3a2 2 0 0 0 2 2h3"></path>
+                          <path d="M16 21h3a2 2 0 0 0 2-2v-3"></path>
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
