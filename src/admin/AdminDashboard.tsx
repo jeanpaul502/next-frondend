@@ -99,8 +99,9 @@ const AdminDashboardContent = () => {
                 const userData = data.user || data;
 
                 if (!userData || userData.role !== 'ADMIN') {
-                    console.warn('Access denied: User is not ADMIN', userData);
-                    router.push('/dashboard');
+                    console.warn('Access denied: User is not ADMIN. Role identified:', userData?.role, 'User data:', userData);
+                    // Force la redirection explicite vers Dashboard
+                    window.location.href = '/dashboard';
                     return;
                 }
 

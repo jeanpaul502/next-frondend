@@ -17,7 +17,7 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ title, description, user, onT
 
     const handleLogout = async () => {
         try {
-            await fetch(`${API_BASE_URL}/auth/logout`, { 
+            await fetch(`${API_BASE_URL}/auth/logout`, {
                 method: 'POST',
                 credentials: 'include'
             });
@@ -44,7 +44,13 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ title, description, user, onT
         ? `${user.firstName} ${user.lastName}`
         : user?.email || 'Administrateur';
 
-    const userImage = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=1780&auto=format&fit=crop";
+    const getAvatarUrl = (path?: string) => {
+        if (!path) return "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=1780&auto=format&fit=crop";
+        if (path.startsWith('http')) return path;
+        return `${API_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`;
+    };
+
+    const userImage = getAvatarUrl(user?.avatarUrl);
 
     return (
         <header className="h-20 border-b border-white/10 bg-black/40 backdrop-blur-xl flex justify-between items-center px-8 sticky top-0 z-10">
@@ -67,7 +73,7 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ title, description, user, onT
                         <div className="h-9 w-9 overflow-hidden rounded-lg border-2 border-transparent group-hover:border-blue-500 transition-all">
                             <img src={userImage} alt="User" className="w-full h-full object-cover" />
                         </div>
-                        <Icon 
+                        <Icon
                             icon="solar:alt-arrow-down-linear"
                             width="16"
                             height="16"
@@ -93,7 +99,7 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ title, description, user, onT
 
                             {/* Menu Items */}
                             <div className="py-2 flex flex-col gap-1">
-                                <button 
+                                <button
                                     onClick={() => router.push('/dashboard')}
                                     className="group relative mx-2 flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 transition-all cursor-pointer"
                                 >
@@ -104,7 +110,7 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ title, description, user, onT
                                     <span className="text-white font-medium">Retour au site</span>
                                 </button>
 
-                                <button 
+                                <button
                                     onClick={() => {
                                         if (onTabChange) onTabChange('settings');
                                         setIsUserMenuOpen(false);

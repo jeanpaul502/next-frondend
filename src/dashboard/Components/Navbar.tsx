@@ -473,7 +473,11 @@ export const Navbar = ({ onSearch }: { onSearch?: (query: string) => void }) => 
                         >
                             <div className="h-9 w-9 overflow-hidden rounded-lg border-2 border-transparent group-hover:border-blue-500 transition-all bg-gray-800">
                                 {userData?.avatar ? (
-                                    <img src={userData.avatar} className="w-full h-full object-cover" alt="User" />
+                                    <img
+                                        src={userData.avatar.startsWith('http') ? userData.avatar : `${API_BASE_URL}${userData.avatar.startsWith('/') ? '' : '/'}${userData.avatar}`}
+                                        className="w-full h-full object-cover"
+                                        alt="User"
+                                    />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center bg-blue-600 text-white font-bold">
                                         {userData?.firstName?.[0] || 'U'}
@@ -499,7 +503,11 @@ export const Navbar = ({ onSearch }: { onSearch?: (query: string) => void }) => 
                                     <div className="flex items-center gap-3">
                                         <div className="h-12 w-12 overflow-hidden rounded-full border-2 border-blue-500 bg-gray-800">
                                             {userData?.avatar ? (
-                                                <img src={userData.avatar} className="w-full h-full object-cover" alt="User" />
+                                                <img
+                                                    src={userData.avatar.startsWith('http') ? userData.avatar : `${API_BASE_URL}${userData.avatar.startsWith('/') ? '' : '/'}${userData.avatar}`}
+                                                    className="w-full h-full object-cover"
+                                                    alt="User"
+                                                />
                                             ) : (
                                                 <div className="w-full h-full flex items-center justify-center bg-blue-600 text-white font-bold text-xl">
                                                     {userData?.firstName?.[0] || 'U'}
