@@ -859,24 +859,23 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
       {/* Mobile Center Controls - Gros boutons Play/Skip */}
       {isMobile && showControls && (
         <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
-          <div className="flex items-center gap-12 pointer-events-auto">
+          <div className="flex items-center gap-8 pointer-events-auto">
             {/* Skip Back -10s */}
             <button
               onClick={(e) => { e.stopPropagation(); skipTime(-10); }}
-              className="p-4 rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 transition-all active:scale-95"
+              className="relative w-14 h-14 flex items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 transition-all active:scale-95"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
                 <path d="M3 3v5h5" />
-                <path d="M12 12l-4 0" stroke="transparent" /> {/* Spacer */}
               </svg>
-              <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] font-bold mt-1 ml-0.5">10</span>
+              <span className="absolute text-[9px] font-black mt-1">10</span>
             </button>
 
             {/* Play/Pause */}
             <button
               onClick={(e) => { e.stopPropagation(); togglePlay(); }}
-              className="p-6 rounded-full bg-white/10 text-white backdrop-blur-md hover:bg-white/20 transition-all active:scale-95 border border-white/20"
+              className="w-20 h-20 flex items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-md hover:bg-white/20 transition-all active:scale-95 border border-white/20"
             >
               {isPlaying ? (
                 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
@@ -892,13 +891,13 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
             {/* Skip Forward +10s */}
             <button
               onClick={(e) => { e.stopPropagation(); skipTime(10); }}
-              className="p-4 rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 transition-all active:scale-95"
+              className="relative w-14 h-14 flex items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 transition-all active:scale-95"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
                 <path d="M21 3v5h-5" />
               </svg>
-              <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] font-bold mt-1 mr-0.5">10</span>
+              <span className="absolute text-[9px] font-black mt-1">10</span>
             </button>
           </div>
         </div>

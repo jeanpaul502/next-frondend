@@ -135,11 +135,21 @@ export default function WatchClient({ id, movieData }: WatchClientProps) {
         );
     }
 
+    const handleClose = () => {
+        if (autoplay) {
+            // If we came from dashboard (autoplay), go back there
+            router.push('/dashboard');
+        } else {
+            // Otherwise go back to landing view
+            setViewMode('landing');
+        }
+    };
+
     // MODE: PLAYER
     if (viewMode === 'watching') {
         return (
             <div className="fixed inset-0 bg-black z-50">
-                <MoviePlayer movie={movie} onClose={() => setViewMode('landing')} />
+                <MoviePlayer movie={movie} onClose={handleClose} />
             </div>
         );
     }

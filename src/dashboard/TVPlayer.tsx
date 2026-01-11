@@ -56,6 +56,14 @@ export const TVPlayer = () => {
 
     // États pour le design (adaptés de MoviePlayer)
     const [lastNonMutedVolume, setLastNonMutedVolume] = useState<number>(1);
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
 
     // États pour la qualité vidéo et audio
     const [levels, setLevels] = useState<any[]>([]);
@@ -424,19 +432,28 @@ export const TVPlayer = () => {
             <div className={`w-full absolute top-0 right-0 left-0 pointer-events-none z-20 transition-all duration-500 ease-in-out ${showControls || !isPlaying || showSidebar ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full'
                 }`}>
                 <div className="absolute w-full transition-all z-10 top-0 left-0 right-0 h-[120px] bg-gradient-to-b to-transparent from-black/50"></div>
-                <div className="relative z-20 p-8">
+                <div className={`relative z-20 ${isMobile ? 'p-4' : 'p-8'}`}>
                     <div className="flex w-full justify-between items-center">
                         <div className="flex flex-row gap-4">
                             <div className="flex flex-row items-center">
                                 <div className="pointer-events-auto flex flex-row items-center">
                                     <button
-                                        className="flex items-center justify-center font-bold whitespace-nowrap relative overflow-hidden transition-all transform-gpu h-9 text-sm px-3 rounded-md text-white hover:text-gray-300 cursor-pointer gap-2 bg-black/20 hover:bg-black/40 backdrop-blur-sm border border-white/10"
+                                        className={`flex items-center justify-center font-bold whitespace-nowrap relative overflow-hidden transition-all transform-gpu text-sm rounded-md text-white hover:text-gray-300 cursor-pointer gap-2 bg-black/20 hover:bg-black/40 backdrop-blur-sm border border-white/10 ${isMobile ? 'h-12 w-12 rounded-full p-0' : 'h-9 px-3'}`}
                                         onClick={() => router.push('/channels')}
                                     >
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                            <path d="m15 18-6-6 6-6" />
-                                        </svg>
-                                        Retour
+                                        {isMobile ? (
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M18 6 6 18" />
+                                                <path d="m6 6 12 12" />
+                                            </svg>
+                                        ) : (
+                                            <>
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                    <path d="m15 18-6-6 6-6" />
+                                                </svg>
+                                                Retour
+                                            </>
+                                        )}
                                     </button>
                                 </div>
                             </div>
@@ -444,6 +461,53 @@ export const TVPlayer = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Mobile Center Controls - Gros boutons Play/Skip */}
+            {isMobile && showControls && (
+                <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
+                    <div className="flex items-center gap-8 pointer-events-auto">
+                        {/* Skip Back -10s */}
+                        <button
+                            onClick={(e) => { e.stopPropagation(); seek(-10); }}
+                            className="relative w-14 h-14 flex items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 transition-all active:scale-95"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                                <path d="M3 3v5h5" />
+                            </svg>
+                            <span className="absolute text-[9px] font-black mt-1">10</span>
+                        </button>
+
+                        {/* Play/Pause */}
+                        <button
+                            onClick={(e) => { e.stopPropagation(); togglePlay(); }}
+                            className="w-20 h-20 flex items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-md hover:bg-white/20 transition-all active:scale-95 border border-white/20"
+                        >
+                            {isPlaying ? (
+                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+                                    <path fillRule="evenodd" d="M6.75 5.25a.75.75 0 0 1 .75-.75H9a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H7.5a.75.75 0 0 1-.75-.75V5.25Zm7.5 0A.75.75 0 0 1 15 4.5h1.5a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H15a.75.75 0 0 1-.75-.75V5.25Z" clipRule="evenodd" />
+                                </svg>
+                            ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="currentColor" className="ml-1">
+                                    <path fillRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" clipRule="evenodd" />
+                                </svg>
+                            )}
+                        </button>
+
+                        {/* Skip Forward +10s */}
+                        <button
+                            onClick={(e) => { e.stopPropagation(); seek(10); }}
+                            className="relative w-14 h-14 flex items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 transition-all active:scale-95"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+                                <path d="M21 3v5h-5" />
+                            </svg>
+                            <span className="absolute text-[9px] font-black mt-1">10</span>
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Indicateur de chargement */}
             {isLoading && !error && (
@@ -631,8 +695,8 @@ export const TVPlayer = () => {
                             </div>
                         </div>
 
-                        {/* Contrôles principaux */}
-                        <div className="flex justify-between pointer-events-auto" dir="ltr">
+                        {/* Contrôles principaux (Desktop uniquement) */}
+                        <div className="hidden md:flex justify-between pointer-events-auto" dir="ltr">
                             <div className="flex items-center gap-3">
                                 {/* Bouton Play/Pause */}
                                 <div className="flex items-center justify-center font-medium whitespace-nowrap relative overflow-hidden transition-all h-10 text-sm rounded-md cursor-pointer text-white bg-opacity-20 hover:bg-opacity-15 backdrop-blur-sm transform-gpu bg-white/5 py-0 px-0">
