@@ -35,6 +35,11 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `console.log('🔧 [Debug Config] API URL:', '${process.env.NEXT_PUBLIC_API_URL}');`,
+          }}
+        />
         <Providers>
           {children}
         </Providers>
