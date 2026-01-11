@@ -141,8 +141,8 @@ export default function Dashboard() {
         if (typeof window !== 'undefined' && window.innerWidth < 768) {
             const videoUrl = movie.videoUrl || movie.url;
             if (videoUrl) {
-                // Navigate to the mobile player route
-                router.push(`/watch/movie/${movie.id}`);
+                // Navigate to the mobile player route with autoplay
+                router.push(`/watch/movie/${movie.id}?autoplay=true`);
                 return;
             }
         }

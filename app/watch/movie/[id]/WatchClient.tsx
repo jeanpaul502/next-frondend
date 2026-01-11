@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Icon } from '@iconify/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import MoviePlayer from '@/dashboard/Components/MoviePlayer';
@@ -14,6 +14,9 @@ interface WatchClientProps {
 
 export default function WatchClient({ id, movieData }: WatchClientProps) {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const autoplay = searchParams.get('autoplay') === 'true';
+
     const [movie, setMovie] = useState<any>(movieData); // Initialize with server data if available
     const [loading, setLoading] = useState(!movieData);
     const [error, setError] = useState<string | null>(null);
@@ -32,6 +35,10 @@ export default function WatchClient({ id, movieData }: WatchClientProps) {
                 const authRes = await fetch(`${API_BASE_URL}/auth/me`, { credentials: 'include' });
                 if (authRes.ok) {
                     setIsAuthenticated(true);
+                    // Handle Autoplay immediately to skip landing if requested
+                    if (autoplay) {
+                        setViewMode('watching');
+                    }
                 } else {
                     setIsAuthenticated(false);
                 }
@@ -73,7 +80,7 @@ export default function WatchClient({ id, movieData }: WatchClientProps) {
         };
 
         init();
-    }, [id, movie]);
+    }, [id, movie, autoplay]);
 
     const handleWatch = () => {
         if (isAuthenticated) {
