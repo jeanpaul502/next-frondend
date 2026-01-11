@@ -770,10 +770,10 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
       }}
       onMouseLeave={() => !isMobile && setShowControls(false)}
     >
-      {/* Zone de clic pour l'écran de lecture (séparée des contrôles) - Désactivée sur mobile pour laisser le natif */}
+      {/* Zone de clic pour l'écran de lecture (séparée des contrôles) */}
       <div
-        className={`absolute inset-0 z-0 ${isMobile ? 'pointer-events-none' : ''}`}
-        onClick={!isMobile ? handleScreenClick : undefined}
+        className="absolute inset-0 z-0"
+        onClick={handleScreenClick}
       >
         <video
           ref={videoRef}
@@ -782,68 +782,62 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
             : 'w-[100%] object-cover -ml-2'
             }`}
           preload="metadata"
-          controls={isMobile} // Contrôles natifs sur mobile
           playsInline // Important pour iOS
         />
       </div>
 
-      {/* En-tête avec bouton retour - Masqué sur mobile car doublon avec natif ou espace restreint */}
-      {!isMobile && (
-        <div className={`w-full absolute top-0 right-0 left-0 pointer-events-none z-20 transition-all duration-500 ease-in-out ${showControls ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full'
-          }`}>
-          <div className="absolute w-full transition-all z-10 top-0 left-0 right-0 h-[120px] bg-gradient-to-b to-transparent from-black/50"></div>
-          <div className="relative z-20 p-8">
-            <div className="flex w-full justify-between items-center">
-              <div className="flex flex-row gap-4">
-                <div className="flex flex-row items-center">
-                  <div className="pointer-events-auto flex flex-row items-center">
-                    <button
-                      className="flex items-center justify-center font-medium whitespace-nowrap relative overflow-hidden transition-all backdrop-blur-sm transform-gpu h-10 text-sm px-4 rounded-md bg-black/50 text-white hover:bg-black/70 focus-visible:outline-white/20 cursor-pointer gap-2"
-                      onClick={() => onClose ? onClose() : router.back()}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-                        <path d="m15 18-6-6 6-6" />
-                      </svg>
-                      Retour
-                    </button>
-                  </div>
+      {/* En-tête avec bouton retour - Toujours visible pour pouvoir sortir */}
+      <div className={`w-full absolute top-0 right-0 left-0 pointer-events-none z-20 transition-all duration-500 ease-in-out ${showControls ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full'
+        }`}>
+        <div className="absolute w-full transition-all z-10 top-0 left-0 right-0 h-[120px] bg-gradient-to-b to-transparent from-black/50"></div>
+        <div className="relative z-20 p-8">
+          <div className="flex w-full justify-between items-center">
+            <div className="flex flex-row gap-4">
+              <div className="flex flex-row items-center">
+                <div className="pointer-events-auto flex flex-row items-center">
+                  <button
+                    className="flex items-center justify-center font-medium whitespace-nowrap relative overflow-hidden transition-all backdrop-blur-sm transform-gpu h-10 text-sm px-4 rounded-md bg-black/50 text-white hover:bg-black/70 focus-visible:outline-white/20 cursor-pointer gap-2"
+                    onClick={() => onClose ? onClose() : router.back()}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                      <path d="m15 18-6-6 6-6" />
+                    </svg>
+                    Retour
+                  </button>
                 </div>
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-      )}
-
-      {/* Pause Overlay - Logo & Description - Masqué sur mobile */}
-      {!isMobile && (
-        <AnimatePresence>
-          {showPauseOverlay && !isPlaying && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.5 }}
-              className="absolute inset-0 z-30 pointer-events-none flex items-center px-16 md:px-24"
-            >
-              <div className="max-w-xl space-y-6">
-                {/* Logo ou Titre */}
-                {movie?.logoPath ? (
-                  <img
-                    src={movie.logoPath}
-                    alt={movie?.title || 'Titre du film'}
-                    className="w-80 md:w-[500px] object-contain drop-shadow-2xl"
-                  />
-                ) : (
-                  <h1 className="text-4xl md:text-6xl font-black text-white drop-shadow-lg">
-                    {movie?.title || ''}
-                  </h1>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      )}
+      {/* Pause Overlay - Logo & Description */}
+      <AnimatePresence>
+        {showPauseOverlay && !isPlaying && !buffering && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="absolute inset-0 z-30 pointer-events-none flex items-center px-16 md:px-24"
+          >
+            <div className="max-w-xl space-y-6">
+              {/* Logo ou Titre */}
+              {movie?.logoPath ? (
+                <img
+                  src={movie.logoPath}
+                  alt={movie?.title || 'Titre du film'}
+                  className="w-80 md:w-[500px] object-contain drop-shadow-2xl"
+                />
+              ) : (
+                <h1 className="text-4xl md:text-6xl font-black text-white drop-shadow-lg">
+                  {movie?.title || ''}
+                </h1>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Indicateur de chargement */}
       {buffering && (
@@ -854,7 +848,7 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
 
       {/* Contrôles */}
       <div className={`w-full absolute bottom-0 left-0 right-0 z-20 transition-all duration-500 ease-in-out px-4 pb-4 sm:px-8 sm:pb-8 ${showControls ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-full'
-        } ${isMobile ? 'hidden' : ''}`}> {/* Ajout de hidden sur mobile */}
+        }`}>
         {/* Bande noire qui commence en bas avec espace */}
         <div className={`absolute w-full transition-all bottom-0 left-0 right-0 bg-black z-10 ${isFullscreen ? 'h-[calc(100%-90px)]' : 'h-[calc(100%-140px)]'
           }`}></div>

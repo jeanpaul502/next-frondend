@@ -53,13 +53,13 @@ export async function generateMetadata(
     const imageUrl = movie.backdropPath || movie.posterPath || movie.image || '/default-share-image.jpg';
 
     return {
-        title: `${title} - Regarder sur Netfix`,
+        title: `${title} - Regarder sur Cineo`,
         description: description,
         openGraph: {
             title: title,
             description: description,
             url: `/watch/movie/${id}`,
-            siteName: 'Netfix',
+            siteName: 'Cineo',
             images: [
                 {
                     url: imageUrl,

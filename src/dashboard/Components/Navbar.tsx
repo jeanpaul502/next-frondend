@@ -466,7 +466,7 @@ export const Navbar = ({ onSearch }: { onSearch?: (query: string) => void }) => 
                     </div>
 
                     {/* User Avatar with Dropdown */}
-                    <div className="relative" ref={userMenuRef}>
+                    <div className="relative hidden md:block" ref={userMenuRef}>
                         <div
                             className="flex items-center gap-2 cursor-pointer group"
                             onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
@@ -618,6 +618,26 @@ export const Navbar = ({ onSearch }: { onSearch?: (query: string) => void }) => 
                         className="md:hidden bg-black/95 backdrop-blur-xl border-b border-white/10 overflow-hidden"
                     >
                         <ul className="flex flex-col p-4 space-y-4 text-gray-300 font-medium">
+                            {/* User Profile in Mobile Menu */}
+                            <li className="flex items-center gap-3 pb-4 border-b border-white/10 mb-2" onClick={() => { setIsMobileMenuOpen(false); router.push('/dashboard/settings'); }}>
+                                <div className="h-10 w-10 overflow-hidden rounded-full border-2 border-blue-500 bg-gray-800">
+                                    {userData?.avatar ? (
+                                        <img
+                                            src={userData.avatar.startsWith('http') ? userData.avatar : `${API_BASE_URL}${userData.avatar.startsWith('/') ? '' : '/'}${userData.avatar}`}
+                                            className="w-full h-full object-cover"
+                                            alt="User"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center bg-blue-600 text-white font-bold">
+                                            {userData?.firstName?.[0] || 'U'}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-white font-bold">{displayName}</span>
+                                    <span className="text-xs text-blue-400">Gérer le compte</span>
+                                </div>
+                            </li>
                             {["Home", "Films", "Séries", "Chaines TV", "Ma Liste"].map((item) => {
                                 const isDisabled = item === 'Séries';
                                 return (
@@ -670,7 +690,7 @@ export const Navbar = ({ onSearch }: { onSearch?: (query: string) => void }) => 
                             value={searchQuery}
                             onChange={(e) => { setSearchQuery(e.target.value); onSearch?.(e.target.value); }}
                             placeholder="Rechercher..."
-                            className="block w-full pl-9 md:pl-12 pr-4 py-1.5 md:py-3 bg-white/5 border border-white/10 rounded-xl md:rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:border-blue-500/50 focus:bg-white/10 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm md:text-base"
+                            className="block w-full pl-9 md:pl-12 pr-4 py-1.5 md:py-3 bg-white/5 border border-white/10 rounded-xl md:rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:border-blue-500/50 focus:bg-white/10 focus:ring-4 focus:ring-blue-500/10 transition-all text-base"
                             autoFocus
                         />
                         <div className="absolute inset-y-0 right-0 pr-4 flex items-center gap-2">
@@ -679,9 +699,12 @@ export const Navbar = ({ onSearch }: { onSearch?: (query: string) => void }) => 
                             )}
                             <button
                                 onClick={() => setIsSearchOpen(false)}
-                                className="p-1 bg-white/10 rounded-lg text-white transition-colors hover:bg-white/20"
+                                className="p-1.5 bg-white/10 rounded-full text-white transition-colors hover:bg-white/20"
                             >
-                                <span className="text-xs font-medium px-2">ESC</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
                             </button>
                         </div>
                     </div>
