@@ -108,9 +108,9 @@ const WelcomePage = () => {
                 className="absolute inset-0 bg-cover bg-[left]"
                 style={{ backgroundImage: `url('${currentMovie.backdropPath || currentMovie.posterPath}')` }}
               />
-              {/* Gradients Overlay pour lisibilité */}
-              <div className="absolute inset-0 bg-gradient-to-r from-black from-40% via-black/60 via-65% to-transparent" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
+              {/* Gradients Overlay pour lisibilité - Visible uniquement sur Desktop (md+) */}
+              <div className="absolute inset-0 hidden md:block md:bg-gradient-to-r md:from-black md:from-40% md:via-black/60 md:via-65% md:to-transparent" />
+              <div className="absolute inset-0 hidden md:block md:bg-gradient-to-t md:from-black md:via-transparent md:to-transparent" />
               {/* Grain texture for cinematic feel */}
               <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none mix-blend-overlay"></div>
             </motion.div>
@@ -157,22 +157,23 @@ const WelcomePage = () => {
               </div>
 
               {/* Buttons */}
-              <div className="flex flex-wrap gap-3 sm:gap-4">
+              {/* Buttons - Côte à côte sur mobile (flex-row, no wrap) */}
+              <div className="flex flex-row gap-2 sm:gap-4 w-full sm:w-auto">
                 <Button
                   size="default"
                   href="/register"
-                  className="h-11 sm:h-12 px-6 sm:px-8 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm sm:text-base shadow-lg transition-all hover:scale-105 min-h-[44px]"
+                  className="flex-1 sm:flex-none h-11 sm:h-12 px-2 sm:px-8 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-base shadow-lg transition-all hover:scale-105 min-h-[44px] whitespace-nowrap overflow-hidden text-ellipsis"
                 >
-                  Commencer Gratuitement
+                  Commencer
                 </Button>
                 <Button
                   onClick={() => setIsReviewModalOpen(true)}
                   size="default"
                   variant="outline"
-                  className="h-11 px-6 rounded-md border-white/20 bg-white/5 hover:bg-white/10 backdrop-blur-md text-white font-semibold text-base transition-all hover:scale-105"
+                  className="flex-1 sm:flex-none h-11 px-2 sm:px-6 rounded-md border-white/20 bg-white/5 hover:bg-white/10 backdrop-blur-md text-white font-semibold text-xs sm:text-base transition-all hover:scale-105 min-h-[44px] whitespace-nowrap overflow-hidden text-ellipsis"
                 >
-                  <Icon icon="lucide:message-circle" className="w-4 h-4 mr-2" />
-                  Laisser vos avis
+                  <Icon icon="lucide:message-circle" className="w-3.5 h-3.5 mr-1.5 sm:mr-2 flex-shrink-0" />
+                  Avis
                 </Button>
               </div>
             </motion.div>
