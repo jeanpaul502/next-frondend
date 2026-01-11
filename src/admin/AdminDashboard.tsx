@@ -64,12 +64,7 @@ const AdminDashboardContent = () => {
             try {
                 const response = await fetch(`${API_BASE_URL}/auth/me?t=${Date.now()}`, {
                     credentials: 'include',
-                    cache: 'no-store',
-                    headers: {
-                        'Cache-Control': 'no-cache',
-                        'Pragma': 'no-cache',
-                        'Expires': '0'
-                    }
+                    cache: 'no-store'
                 });
 
                 if (!response.ok) {
