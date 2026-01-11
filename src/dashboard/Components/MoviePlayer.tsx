@@ -907,9 +907,8 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
       {/* Contrôles du bas */}
       <div className={`w-full absolute bottom-0 left-0 right-0 z-20 transition-all duration-500 ease-in-out ${isMobile ? 'px-4 pb-6' : 'px-4 pb-4 sm:px-8 sm:pb-8'} ${showControls ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-full'
         }`}>
-        {/* Bande noire qui commence en bas avec espace */}
-        <div className={`absolute w-full transition-all bottom-0 left-0 right-0 bg-black z-10 ${isFullscreen ? 'h-[calc(100%-90px)]' : 'h-[calc(100%-140px)]'
-          }`}></div>
+        {/* Bande noire (Gradient) pour lisibilité des contrôles */}
+        <div className="absolute w-full transition-all bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black via-black/60 to-transparent z-10 pointer-events-none"></div>
 
         {/* Contrôles avec z-index plus élevé */}
         <div className="relative z-20">

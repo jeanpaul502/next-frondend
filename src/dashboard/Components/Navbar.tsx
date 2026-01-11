@@ -615,7 +615,7 @@ export const Navbar = ({ onSearch }: { onSearch?: (query: string) => void }) => 
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="md:hidden bg-black/95 backdrop-blur-xl border-b border-white/10 overflow-hidden"
+                        className="md:hidden bg-black/95 backdrop-blur-xl border-b border-white/10 max-h-[85vh] overflow-y-auto"
                     >
                         <ul className="flex flex-col p-4 space-y-4 text-gray-300 font-medium">
                             {/* User Profile in Mobile Menu */}
@@ -664,6 +664,17 @@ export const Navbar = ({ onSearch }: { onSearch?: (query: string) => void }) => 
                                 );
                             })}
                             <li className="h-px bg-white/10 w-full my-2"></li>
+                            <li
+                                onClick={handleLogout}
+                                className="flex items-center gap-3 py-3 px-2 text-red-500 hover:bg-white/5 rounded-lg cursor-pointer"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                    <polyline points="16 17 21 12 16 7"></polyline>
+                                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                                </svg>
+                                <span>Déconnexion</span>
+                            </li>
                         </ul>
                     </motion.div>
                 )}

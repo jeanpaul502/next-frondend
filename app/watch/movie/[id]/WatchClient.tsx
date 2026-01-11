@@ -41,6 +41,12 @@ export default function WatchClient({ id, movieData }: WatchClientProps) {
                     }
                 } else {
                     setIsAuthenticated(false);
+                    // Si autoplay demandé mais non connecté, redirection vers login
+                    if (autoplay) {
+                        const currentUrl = window.location.pathname + window.location.search;
+                        router.push(`/login?next=${encodeURIComponent(currentUrl)}`);
+                        return; // Stop further execution
+                    }
                 }
             } catch (e) {
                 console.error("Auth check failed", e);
@@ -96,11 +102,11 @@ export default function WatchClient({ id, movieData }: WatchClientProps) {
         router.push('/login');
     };
 
-    if (loading || authChecking) {
+    if (loading || authChecking || (autoplay && authChecking)) {
         return (
             <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white font-sans">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-                <p className="text-gray-400">Chargement...</p>
+                <p className="text-gray-400">{autoplay ? 'Lancement du film...' : 'Chargement...'}</p>
             </div>
         );
     }
