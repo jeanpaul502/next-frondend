@@ -6,7 +6,7 @@ import { Slider } from '@/components/ui/slider';
 import { motion, AnimatePresence } from 'framer-motion';
 import Hls from 'hls.js';
 import {
-  Play, Pause, Volume2, VolumeX, Maximize, Minimize, SkipBack, SkipForward, ArrowLeft, Settings, Fullscreen, Languages
+  Play, Pause, Volume2, VolumeX, Maximize, Minimize, SkipBack, SkipForward, ArrowLeft, Settings, Fullscreen, Languages, RotateCcw, RotateCw, PictureInPicture
 } from 'lucide-react';
 import { API_BASE_URL, buildApiUrlWithParams } from '../../utils/config'
 
@@ -145,6 +145,26 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
           setBuffering(false);
         })
         .catch((error) => {
+          console.log("Autoplay error:", error);
+
+          // Si l'erreur est liée à l'autoplay bloqué (NotAllowedError), essayer en muet
+          if (error.name === 'NotAllowedError') {
+            console.log("Retrying muted autoplay...");
+            videoElement.muted = true;
+            setIsMuted(true);
+
+            videoElement.play()
+              .then(() => {
+                setIsPlaying(true);
+                setBuffering(false);
+              })
+              .catch((e) => {
+                console.error("Muted autoplay failed too:", e);
+                // Si ça échoue même en muet, on arrête d'essayer
+                setBuffering(false);
+              });
+            return;
+          }
 
           // Si la vidéo n'est pas prête, attendre qu'elle le soit
           if (videoElement.readyState < 2) {
@@ -309,6 +329,14 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
         video.play().then(() => {
           setIsPlaying(true);
         }).catch((error) => {
+          // Si l'erreur est liée à l'autoplay bloqué (NotAllowedError), essayer en muet
+          if (error.name === 'NotAllowedError') {
+            video.muted = true;
+            setIsMuted(true);
+            video.play().then(() => {
+              setIsPlaying(true);
+            }).catch(() => { });
+          }
           // Erreur ignorée
         });
       });
@@ -412,6 +440,14 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
         video.play().then(() => {
           setIsPlaying(true);
         }).catch((error) => {
+          // Si l'erreur est liée à l'autoplay bloqué (NotAllowedError), essayer en muet
+          if (error.name === 'NotAllowedError') {
+            video.muted = true;
+            setIsMuted(true);
+            video.play().then(() => {
+              setIsPlaying(true);
+            }).catch(() => { });
+          }
           // Ignorer l'erreur AbortError qui est normale
         });
       };
@@ -795,24 +831,27 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
             <div className="flex flex-row gap-4">
               <div className="flex flex-row items-center">
                 <div className="pointer-events-auto flex flex-row items-center">
-                  <button
-                    className={`flex items-center justify-center font-bold whitespace-nowrap relative overflow-hidden transition-all backdrop-blur-sm transform-gpu h-10 text-sm ${isMobile ? 'w-10 rounded-full px-0' : 'px-4 rounded-md'} bg-black/50 text-white hover:bg-black/70 focus-visible:outline-white/20 cursor-pointer gap-2 border border-white/10`}
-                    onClick={() => onClose ? onClose() : router.back()}
-                  >
-                    {isMobile ? (
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                  {isMobile ? (
+                    // Mobile Top Bar Style - Close Button (X)
+                    <button
+                      className="w-10 h-10 flex items-center justify-center rounded-full bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 transition-all active:scale-95"
+                      onClick={() => onClose ? onClose() : router.back()}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
                       </svg>
-                    ) : (
-                      <>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-                          <path d="m15 18-6-6 6-6" />
-                        </svg>
-                        Retour
-                      </>
-                    )}
-                  </button>
+                    </button>
+                  ) : (
+                    // Desktop Top Bar Style
+                    <button
+                      className="flex items-center justify-center font-bold whitespace-nowrap relative overflow-hidden transition-all backdrop-blur-sm transform-gpu h-10 text-sm px-4 rounded-md bg-black/50 text-white hover:bg-black/70 focus-visible:outline-white/20 cursor-pointer gap-2 border border-white/10"
+                      onClick={() => onClose ? onClose() : router.back()}
+                    >
+                      <ArrowLeft className="w-5 h-5" />
+                      Retour
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -856,48 +895,47 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
       )}
 
       {/* Contrôles */}
-      {/* Mobile Center Controls - Gros boutons Play/Skip */}
+      {/* Mobile Center Controls - Gros boutons Play/Skip style PlayerScreen.js */}
       {isMobile && showControls && (
         <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
-          <div className="flex items-center gap-8 pointer-events-auto">
+          <div className="flex items-center gap-10 md:gap-20 pointer-events-auto">
             {/* Skip Back -10s */}
             <button
               onClick={(e) => { e.stopPropagation(); skipTime(-10); }}
-              className="relative w-14 h-14 flex items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 transition-all active:scale-95"
+              className="relative w-16 h-16 flex items-center justify-center rounded-full active:scale-95 transition-transform"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                <path d="M3 3v5h5" />
-              </svg>
-              <span className="absolute text-[9px] font-black mt-1">10</span>
+              <div className="relative flex items-center justify-center">
+                <RotateCcw className="w-12 h-12 text-white" strokeWidth={1.5} />
+                <span className="absolute text-[10px] font-bold text-white mt-1">10</span>
+              </div>
             </button>
 
             {/* Play/Pause */}
-            <button
-              onClick={(e) => { e.stopPropagation(); togglePlay(); }}
-              className="w-20 h-20 flex items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-md hover:bg-white/20 transition-all active:scale-95 border border-white/20"
-            >
-              {isPlaying ? (
-                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
-                  <path fillRule="evenodd" d="M6.75 5.25a.75.75 0 0 1 .75-.75H9a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H7.5a.75.75 0 0 1-.75-.75V5.25Zm7.5 0A.75.75 0 0 1 15 4.5h1.5a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H15a.75.75 0 0 1-.75-.75V5.25Z" clipRule="evenodd" />
-                </svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="currentColor" className="ml-1">
-                  <path fillRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" clipRule="evenodd" />
-                </svg>
+            <div className="relative">
+              {!isPlaying && (
+                <div className="absolute inset-0 rounded-full border-2 border-white/70 animate-ping opacity-75"></div>
               )}
-            </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); togglePlay(); }}
+                className="relative w-20 h-20 flex items-center justify-center rounded-full bg-white/15 backdrop-blur-sm text-white hover:bg-white/25 transition-all active:scale-95 shadow-lg"
+              >
+                {isPlaying ? (
+                  <Pause className="w-8 h-8 fill-white" />
+                ) : (
+                  <Play className="w-8 h-8 fill-white ml-1" />
+                )}
+              </button>
+            </div>
 
             {/* Skip Forward +10s */}
             <button
               onClick={(e) => { e.stopPropagation(); skipTime(10); }}
-              className="relative w-14 h-14 flex items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 transition-all active:scale-95"
+              className="relative w-16 h-16 flex items-center justify-center rounded-full active:scale-95 transition-transform"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
-                <path d="M21 3v5h-5" />
-              </svg>
-              <span className="absolute text-[9px] font-black mt-1">10</span>
+              <div className="relative flex items-center justify-center">
+                <RotateCw className="w-12 h-12 text-white" strokeWidth={1.5} />
+                <span className="absolute text-[10px] font-bold text-white mt-1">10</span>
+              </div>
             </button>
           </div>
         </div>
@@ -912,15 +950,36 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
         {/* Contrôles avec z-index plus élevé */}
         <div className="relative z-20">
 
-          {/* MOBILE CONTROLS (Simplifié: Temps + Slider) */}
-          <div className="block md:hidden px-4 pb-8 w-full pt-12 text-white">
-            <div className="flex flex-col gap-3">
-              <div className="flex justify-between items-center text-xs font-bold text-white/80 px-1">
-                <span>{formatTime(currentTime)}</span>
-                <span>{formatTime(duration)}</span>
+          {/* MOBILE CONTROLS (Style PlayerScreen.js) */}
+          <div className="block md:hidden px-4 pb-6 w-full pt-4 text-white">
+            {/* Info Row: Title & Actions (Mobile - No Logo) */}
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-3">
+                <span className="text-base font-semibold text-white max-w-[250px] truncate shadow-sm">
+                  {movie?.title || 'Titre du film'}
+                </span>
               </div>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={(e) => { e.stopPropagation(); togglePiP(); }}
+                  className="w-9 h-9 flex items-center justify-center rounded-full bg-white/15 backdrop-blur-sm"
+                >
+                  <PictureInPicture className="w-4 h-4 text-white" />
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); toggleSettings(); }}
+                  className="w-9 h-9 flex items-center justify-center rounded-full bg-white/15 backdrop-blur-sm"
+                >
+                  <Settings className="w-4 h-4 text-white" />
+                </button>
+              </div>
+            </div>
 
-              <div className="relative w-full h-6 flex items-center"
+            {/* Seek Bar Row */}
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-bold text-white min-w-[40px] text-right">{formatTime(currentTime)}</span>
+
+              <div className="relative flex-1 h-8 flex items-center cursor-pointer group"
                 onClick={(e) => {
                   const rect = e.currentTarget.getBoundingClientRect();
                   const clickX = e.clientX - rect.left;
@@ -930,17 +989,25 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
                   }
                 }}
               >
-                <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden">
+                {/* Track background */}
+                <div className="w-full h-1 bg-white/30 rounded-full overflow-hidden">
+                  {/* Progress Fill Gradient */}
                   <div
-                    className="h-full bg-[#E50914] rounded-full"
+                    className="h-full bg-gradient-to-r from-[#00A8E1] via-[#0098CC] to-[#0072D2] rounded-full"
                     style={{ width: `${(currentTime / duration) * 100}%` }}
                   ></div>
                 </div>
+
+                {/* Thumb / Handle */}
                 <div
-                  className="absolute h-3 w-3 bg-[#E50914] rounded-full shadow-md transform -translate-x-1/2 top-1.5"
+                  className="absolute h-4 w-4 bg-white rounded-full shadow-md transform -translate-x-1/2 flex items-center justify-center"
                   style={{ left: `${(currentTime / duration) * 100}%` }}
-                ></div>
+                >
+                  <div className="w-1.5 h-1.5 bg-[#0072D2] rounded-full"></div>
+                </div>
               </div>
+
+              <span className="text-xs font-bold text-white min-w-[40px]">{formatTime(duration)}</span>
             </div>
           </div>
 
