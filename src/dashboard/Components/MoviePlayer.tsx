@@ -37,6 +37,7 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
     const checkMobile = () => {
       const userAgent = typeof window.navigator === "undefined" ? "" : navigator.userAgent;
       const mobile = Boolean(userAgent.match(/Android|BlackBerry|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i));
+      console.log("[MoviePlayer] Mobile detection:", { userAgent, mobile });
       setIsMobile(mobile);
     };
     checkMobile();
@@ -132,20 +133,23 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
     // Essayer de lancer la lecture avec plusieurs tentatives
     const attemptPlay = () => {
       if (attempts >= maxAttempts) {
+        console.log("[MoviePlayer] Autoplay failed after max attempts");
         setBuffering(false);
         return;
       }
 
       attempts++;
+      console.log(`[MoviePlayer] Attempting play (${attempts}/${maxAttempts})...`);
       setBuffering(true);
 
       videoElement.play()
         .then(() => {
+          console.log("[MoviePlayer] Play success");
           setIsPlaying(true);
           setBuffering(false);
         })
         .catch((error) => {
-          console.log("Autoplay error:", error);
+          console.log("[MoviePlayer] Autoplay error:", error);
 
           // Si l'erreur est liée à l'autoplay bloqué (NotAllowedError), essayer en muet
           if (error.name === 'NotAllowedError') {
@@ -522,14 +526,17 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
     }
   }, [movie]);
 
-  // Gérer les contrôles de lecture
+      // Gérer les contrôles de lecture
   const togglePlay = () => {
     if (videoRef.current) {
       if (videoRef.current.paused) {
+        console.log("[MoviePlayer] Manual play triggered");
         videoRef.current.play().catch((error) => {
+          console.error("[MoviePlayer] Manual play failed:", error);
           // Ignorer l'erreur AbortError qui est normale
         });
       } else {
+        console.log("[MoviePlayer] Manual pause triggered");
         videoRef.current.pause();
       }
     }
