@@ -94,7 +94,7 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
         }],
       html5: {
         vhs: {
-          overrideNative: true,
+          overrideNative: !videojs.browser.IS_ANDROID && !videojs.browser.IS_IOS,
           enableLowLatency: false,
         },
         nativeAudioTracks: false,
