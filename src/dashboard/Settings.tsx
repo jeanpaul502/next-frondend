@@ -531,7 +531,7 @@ export default function Settings() {
                                             <div className="w-32 h-32 rounded-full bg-black ring-4 ring-white/5 overflow-hidden group-hover:ring-blue-500/50 transition-all duration-300 shadow-2xl">
                                                 {!imageError && (previewImage || profile.avatar) ? (
                                                     <img 
-                                                        src={previewImage || profile.avatar} 
+                                                        src={previewImage || (profile.avatar?.startsWith('http') ? profile.avatar : `${API_BASE_URL}${profile.avatar?.startsWith('/') ? '' : '/'}${profile.avatar}`)}
                                                         className="w-full h-full object-cover" 
                                                         onError={() => setImageError(true)}
                                                     />
