@@ -1,8 +1,10 @@
 'use client';
+
 import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
+import Hls from 'hls.js';
 import { ArrowLeft } from 'lucide-react';
 import { API_BASE_URL, buildApiUrlWithParams } from '../../utils/config';
 import Player from 'video.js/dist/types/player';
@@ -23,6 +25,7 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const playerRef = useRef<Player | null>(null);
+  const hlsRef = useRef<Hls | null>(null);
   const [isReady, setIsReady] = useState(false);
 
   const movie: Movie | undefined = movieProp;
@@ -65,6 +68,8 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
     // Création dynamique de l'élément vidéo pour éviter les conflits DOM React/Video.js
     const videoElement = document.createElement("video-js");
     videoElement.classList.add('vjs-big-play-centered', 'vjs-theme-city');
+    videoElement.setAttribute('playsinline', 'playsinline');
+    videoElement.setAttribute('webkit-playsinline', 'webkit-playsinline');
     container.appendChild(videoElement);
 
     const options = {
@@ -73,6 +78,7 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
         responsive: true,
         fill: true,
         fluid: false,
+        preload: 'auto',
         controlBar: {
           children: [
             'playToggle',
@@ -94,7 +100,7 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
         }],
       html5: {
         vhs: {
-          overrideNative: !videojs.browser.IS_ANDROID && !videojs.browser.IS_IOS,
+          overrideNative: !videojs.browser.IS_IOS,
           enableLowLatency: false,
         },
         nativeAudioTracks: false,
@@ -119,10 +125,81 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
 
     player.on('error', () => {
       console.error("VideoJS Error:", player.error());
+      try {
+        if (!isHlsUrl(sourceUrl)) return;
+
+        if (hlsRef.current) {
+          hlsRef.current.destroy();
+          hlsRef.current = null;
+        }
+
+        const techEl = player.tech(true) && (player.tech(true) as any).el?.() as HTMLVideoElement | undefined;
+
+        if (Hls.isSupported()) {
+          if (!player.isDisposed()) player.dispose();
+          playerRef.current = null;
+
+          if (containerRef.current) {
+            containerRef.current.innerHTML = '';
+            const plainVideo = document.createElement('video');
+            plainVideo.controls = true;
+            plainVideo.autoplay = true;
+            plainVideo.playsInline = true;
+            plainVideo.setAttribute('playsinline', 'playsinline');
+            plainVideo.setAttribute('webkit-playsinline', 'webkit-playsinline');
+            plainVideo.style.width = '100%';
+            plainVideo.style.height = '100%';
+            containerRef.current.appendChild(plainVideo);
+
+            const hls = new Hls({
+              enableWorker: true,
+              lowLatencyMode: false,
+              startLevel: -1,
+              capLevelToPlayerSize: true,
+              autoStartLoad: true,
+            });
+            hlsRef.current = hls;
+            hls.loadSource(sourceUrl);
+            hls.attachMedia(plainVideo);
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+              setIsReady(true);
+              plainVideo.play().catch(() => {});
+            });
+            hls.on(Hls.Events.ERROR, (_evt, data) => {
+              if (data.fatal) {
+                switch (data.type) {
+                  case Hls.ErrorTypes.NETWORK_ERROR:
+                    hls.startLoad();
+                    break;
+                  case Hls.ErrorTypes.MEDIA_ERROR:
+                    hls.recoverMediaError();
+                    break;
+                  default:
+                    console.error("HLS.js fatal error:", data);
+                    break;
+                }
+              }
+            });
+          }
+        }
+        else {
+          const el = techEl;
+          if (el && el.canPlayType && el.canPlayType('application/vnd.apple.mpegurl')) {
+            el.src = sourceUrl;
+            el.play().catch(() => {});
+          }
+        }
+      } catch (e) {
+        console.error("Fallback HLS.js init failed:", e);
+      }
     });
 
     // Cleanup function
     return () => {
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
       if (player && !player.isDisposed()) {
         player.dispose();
         playerRef.current = null;
