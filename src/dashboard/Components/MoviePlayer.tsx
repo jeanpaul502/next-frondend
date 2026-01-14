@@ -45,10 +45,12 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
   const hlsRef = useRef<Hls | null>(null);
   const previousVolumeRef = useRef(1);
   const autoplayMutedRef = useRef(false);
+  const isMobileUA = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
   const [showControls, setShowControls] = useState(true);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [volume, setVolume] = useState(1);
+  const [volume, setVolume] = useState(isMobileUA ? 0 : 1);
+  const [muted, setMuted] = useState<boolean>(isMobileUA);
   const [showVolumePopup, setShowVolumePopup] = useState(false);
   const [levels, setLevels] = useState<any[]>([]);
   const [currentLevel, setCurrentLevel] = useState<number>(-1);
@@ -80,16 +82,10 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
   }, [isSeeking]);
 
   useEffect(() => {
-    const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
-    const isMobileUA = /Android|iPhone|iPad|iPod/i.test(ua);
-    const v = videoRef.current;
-    if (isMobileUA && v) {
-      setVolume(0);
-      v.volume = 0;
-      v.muted = true;
+    if (isMobileUA) {
       autoplayMutedRef.current = true;
     }
-  }, []);
+  }, [isMobileUA]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -104,12 +100,15 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
         setVolume(pv);
         v.volume = pv;
         v.muted = false;
+        setMuted(false);
         autoplayMutedRef.current = false;
       }
     };
+    el.addEventListener('touchstart', handler);
     el.addEventListener('touchend', handler);
     el.addEventListener('click', handler);
     return () => {
+      el.removeEventListener('touchstart', handler);
       el.removeEventListener('touchend', handler);
       el.removeEventListener('click', handler);
     };
@@ -150,14 +149,14 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
         });
       } else if (v.canPlayType('application/vnd.apple.mpegurl')) {
         v.src = sourceUrl;
-        v.addEventListener('loadedmetadata', () => {
+        v.addEventListener('canplay', () => {
           setDuration(v.duration || 0);
           v.play().catch(() => setIsPlaying(false));
         }, { once: true });
       }
     } else {
       v.src = sourceUrl;
-      v.addEventListener('loadedmetadata', () => {
+      v.addEventListener('canplay', () => {
         setDuration(v.duration || 0);
         v.play().catch(() => setIsPlaying(false));
       }, { once: true });
@@ -212,6 +211,7 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = parseFloat(e.target.value);
     setVolume(v);
+    setMuted(v === 0);
     if (videoRef.current) {
       videoRef.current.volume = v;
       videoRef.current.muted = v === 0;
@@ -278,12 +278,13 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
         <div id="player">
           <video
             ref={videoRef}
-            preload="metadata"
+            preload="auto"
             autoPlay
-            muted={volume === 0}
+            muted={muted}
             playsInline
             webkit-playsinline="true"
             x-webkit-airplay="allow"
+            crossOrigin="anonymous"
           />
         </div>
 
