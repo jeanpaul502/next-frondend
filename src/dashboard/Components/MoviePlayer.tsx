@@ -43,6 +43,8 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const hlsRef = useRef<Hls | null>(null);
+  const previousVolumeRef = useRef(1);
+  const autoplayMutedRef = useRef(false);
   const [showControls, setShowControls] = useState(true);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -77,6 +79,41 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
     };
   }, [isSeeking]);
 
+  useEffect(() => {
+    const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+    const isMobileUA = /Android|iPhone|iPad|iPod/i.test(ua);
+    const v = videoRef.current;
+    if (isMobileUA && v) {
+      setVolume(0);
+      v.volume = 0;
+      v.muted = true;
+      autoplayMutedRef.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const handler = () => {
+      const v = videoRef.current;
+      if (v && v.paused) {
+        v.play().catch(() => {});
+      }
+      if (autoplayMutedRef.current && v) {
+        const pv = previousVolumeRef.current > 0 ? previousVolumeRef.current : 0.5;
+        setVolume(pv);
+        v.volume = pv;
+        v.muted = false;
+        autoplayMutedRef.current = false;
+      }
+    };
+    el.addEventListener('touchend', handler);
+    el.addEventListener('click', handler);
+    return () => {
+      el.removeEventListener('touchend', handler);
+      el.removeEventListener('click', handler);
+    };
+  }, [movieUrl]);
   useEffect(() => {
     if (!videoRef.current) return;
     if (hlsRef.current) {
@@ -177,6 +214,10 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
     setVolume(v);
     if (videoRef.current) {
       videoRef.current.volume = v;
+      videoRef.current.muted = v === 0;
+    }
+    if (v > 0) {
+      previousVolumeRef.current = v;
     }
   };
 
@@ -238,6 +279,8 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
           <video
             ref={videoRef}
             preload="metadata"
+            autoPlay
+            muted={volume === 0}
             playsInline
             webkit-playsinline="true"
             x-webkit-airplay="allow"
@@ -378,6 +421,9 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
           overflow:hidden;
           border-radius: 0;
           box-shadow: none;
+        }
+        @supports(height: 100dvh) {
+          #playerWrap { height: 100dvh; }
         }
         #player { position:relative; width:100%; height:100%; }
         #playerWrap video {
