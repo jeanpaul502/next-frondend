@@ -15,8 +15,7 @@ interface MoviePlayerProps {
   onClose?: () => void;
 }
 
-const isHlsUrl = (url: string) =>
-  /\.m3u8(\?|#|$)|api\/proxy\/stream/i.test(url);
+const isHlsUrl = (url: string) => /\.m3u8(\?|#|$)|api\/proxy\/stream/i.test(url);
 
 const getProxiedUrl = (url: string) => {
   if (!isHlsUrl(url)) return url;
@@ -42,7 +41,7 @@ const MoviePlayer = ({ movie, onClose }: MoviePlayerProps) => {
   const movieUrl = movie?.videoUrl || movie?.url || '';
 
   // =========================
-  // VIDEO SETUP (INLINE, PORTRAIT SAFE)
+  // VIDEO INITIALISATION (NO AUTOPLAY)
   // =========================
   useEffect(() => {
     if (!videoRef.current || !movieUrl) return;
@@ -50,58 +49,36 @@ const MoviePlayer = ({ movie, onClose }: MoviePlayerProps) => {
     const video = videoRef.current;
     const src = getProxiedUrl(movieUrl);
 
-    console.log('[Player] init video', src);
-
     setIsBuffering(true);
     setIsPlaying(false);
-    setCurrentTime(0);
-    setDuration(0);
 
     if (hlsRef.current) {
       hlsRef.current.destroy();
       hlsRef.current = null;
     }
 
-    // IMPORTANT: reset src completely
-    video.pause();
-    video.removeAttribute('src');
-    video.load();
-
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
     if (isIOS && video.canPlayType('application/vnd.apple.mpegurl')) {
-      console.log('[Player] iOS native HLS');
       video.src = src;
     } else if (Hls.isSupported() && isHlsUrl(src)) {
-      console.log('[Player] HLS.js attach');
-      const hls = new Hls({ enableWorker: true });
+      const hls = new Hls();
       hlsRef.current = hls;
       hls.loadSource(src);
       hls.attachMedia(video);
-
-      hls.on(Hls.Events.ERROR, (_, data) => {
-        console.error('[HLS error]', data);
-      });
     } else {
-      console.log('[Player] fallback src');
       video.src = src;
     }
 
     const onLoaded = () => {
-      console.log('[Player] metadata loaded', video.duration);
       setDuration(video.duration || 0);
       setIsBuffering(false);
     };
-
     const onTime = () => setCurrentTime(video.currentTime);
     const onPlay = () => setIsPlaying(true);
     const onPause = () => setIsPlaying(false);
     const onWaiting = () => setIsBuffering(true);
     const onPlaying = () => setIsBuffering(false);
-    const onError = () => {
-      console.error('[Player] video error', video.error);
-      setIsBuffering(false);
-    };
 
     video.addEventListener('loadedmetadata', onLoaded);
     video.addEventListener('timeupdate', onTime);
@@ -109,7 +86,6 @@ const MoviePlayer = ({ movie, onClose }: MoviePlayerProps) => {
     video.addEventListener('pause', onPause);
     video.addEventListener('waiting', onWaiting);
     video.addEventListener('playing', onPlaying);
-    video.addEventListener('error', onError);
 
     return () => {
       video.removeEventListener('loadedmetadata', onLoaded);
@@ -118,21 +94,24 @@ const MoviePlayer = ({ movie, onClose }: MoviePlayerProps) => {
       video.removeEventListener('pause', onPause);
       video.removeEventListener('waiting', onWaiting);
       video.removeEventListener('playing', onPlaying);
-      video.removeEventListener('error', onError);
       if (hlsRef.current) hlsRef.current.destroy();
     };
   }, [movieUrl]);
 
   // =========================
-  // USER ACTIONS (NO FULLSCREEN FORCED)
+  // USER ACTIONS (SAFE MOBILE)
   // =========================
   const play = async () => {
     if (!videoRef.current) return;
     try {
-      console.log('[Player] play()');
-      await videoRef.current.play(); // INLINE PLAY
+      await videoRef.current.play();
+      const v: any = videoRef.current;
+      if (isMobile) {
+        if (v.webkitEnterFullscreen) v.webkitEnterFullscreen();
+        else if (v.requestFullscreen) await v.requestFullscreen();
+      }
     } catch (e) {
-      console.error('[Player] play blocked', e);
+      console.error('Play blocked', e);
     }
   };
 
@@ -167,7 +146,7 @@ const MoviePlayer = ({ movie, onClose }: MoviePlayerProps) => {
         await videoRef.current.requestPictureInPicture();
       }
     } catch (e) {
-      console.warn('[Player] PiP error', e);
+      console.warn('PiP error', e);
     }
   };
 
@@ -185,49 +164,26 @@ const MoviePlayer = ({ movie, onClose }: MoviePlayerProps) => {
     setVolume(v);
   };
 
-  const format = (t: number) =>
-    `${Math.floor(t / 60)}:${`${Math.floor(t % 60)}`.padStart(2, '0')}`;
+  const format = (t: number) => `${Math.floor(t / 60)}:${`${Math.floor(t % 60)}`.padStart(2, '0')}`;
 
   if (!movie) return null;
 
   return (
-    <div
-      ref={containerRef}
-      className="fixed inset-0 bg-black z-[100]"
-      onMouseMove={() => setShowControls(true)}
-      onClick={togglePlay}
-    >
-      <video
-        ref={videoRef}
-        className="w-full h-full object-contain"
-        playsInline
-        preload="metadata"
-        crossOrigin="anonymous"
-        onClick={(e) => e.stopPropagation()}
-      />
+    <div ref={containerRef} className="fixed inset-0 bg-black z-[100]" onMouseMove={() => setShowControls(true)}>
+      <video ref={videoRef} className="w-full h-full object-contain" playsInline preload="metadata" />
 
       {isBuffering && (
-        <div className="absolute inset-0 flex items-center justify-center text-white">
-          Chargement…
-        </div>
-      )}
-
-      {/* TOP BAR */}
-      {showControls && (
-        <div className="absolute top-0 left-0 right-0 p-4 flex justify-between text-white">
-          <button onClick={onClose}>✕</button>
-          <button onClick={togglePiP}>📺</button>
-        </div>
+        <div className="absolute inset-0 flex items-center justify-center text-white">Chargement…</div>
       )}
 
       {/* CENTER CONTROLS */}
       {!isBuffering && showControls && (
         <div className="absolute inset-0 flex items-center justify-center gap-10">
-          <button onClick={() => seek(-10)} className="text-white text-xl">⏪</button>
+          <button onClick={() => seek(-10)} className="text-white text-xl">⏪ 10</button>
           <button onClick={togglePlay} className="text-white text-4xl">
             {isPlaying ? '⏸' : '▶'}
           </button>
-          <button onClick={() => seek(10)} className="text-white text-xl">⏩</button>
+          <button onClick={() => seek(10)} className="text-white text-xl">10 ⏩</button>
         </div>
       )}
 
@@ -248,15 +204,13 @@ const MoviePlayer = ({ movie, onClose }: MoviePlayerProps) => {
           </div>
 
           <div className="flex items-center justify-between mt-3">
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.1"
-              value={volume}
-              onChange={onVolume}
-            />
-            <button onClick={toggleFullscreen}>⛶</button>
+            <input type="range" min="0" max="1" step="0.1" value={volume} onChange={onVolume} />
+
+            <div className="flex gap-4">
+              <button onClick={togglePiP}>PiP</button>
+              <button onClick={toggleFullscreen}>⛶</button>
+              <button onClick={onClose}>✕</button>
+            </div>
           </div>
         </div>
       )}
