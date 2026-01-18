@@ -87,12 +87,14 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
             }
         };
 
-        // 1. Try Native HLS (Safari / Mobile)
-        if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        // 1. IOS Native HLS (Always preferred on iOS)
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        
+        if (isIOS && video.canPlayType('application/vnd.apple.mpegurl')) {
             video.src = sourceUrl;
             video.addEventListener('loadedmetadata', handlePlay);
         }
-        // 2. Try HLS.js (Chrome / Firefox / Desktop)
+        // 2. HLS.js (Android / Desktop - Preferred over native Android HLS which can be buggy)
         else if (Hls.isSupported() && isHlsUrl(sourceUrl)) {
             const hls = new Hls({
                 enableWorker: true,
@@ -123,7 +125,12 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
                 }
             });
         }
-        // 3. Fallback (MP4 / WebM)
+        // 3. Native Fallback (e.g. older Android / Safari Desktop)
+        else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+             video.src = sourceUrl;
+             video.addEventListener('loadedmetadata', handlePlay);
+        }
+        // 4. Standard Fallback (MP4 / WebM)
         else {
             video.src = sourceUrl;
             video.addEventListener('loadedmetadata', handlePlay);
@@ -208,14 +215,6 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
         
         if (!element) return;
 
-        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-        // iOS: Use native video fullscreen
-        if (isIOS && videoElement && videoElement.webkitEnterFullscreen) {
-            videoElement.webkitEnterFullscreen();
-            return;
-        }
-
         // Android / Desktop: Use Container Fullscreen + Orientation Lock
         const requestMethod = element.requestFullscreen || 
                               element.webkitRequestFullscreen || 
@@ -235,13 +234,7 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
                 }
             } catch (e) {
                 console.error("Fullscreen request failed:", e);
-                // Fallback to video fullscreen if container fails
-                if (videoElement && videoElement.webkitEnterFullscreen) {
-                    videoElement.webkitEnterFullscreen();
-                }
             }
-        } else if (videoElement && videoElement.webkitEnterFullscreen) {
-            videoElement.webkitEnterFullscreen();
         }
     };
 
@@ -281,22 +274,27 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
     };
 
     // Actions
-    const togglePlay = () => {
+    const togglePlay = async () => {
         if (!videoRef.current) return;
 
-        // Auto-fullscreen on first play/interaction for mobile
-        if (!hasInteracted) {
-            setHasInteracted(true);
-            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-            if (isMobile) {
-                enterFullscreen();
+        try {
+            if (videoRef.current.paused) {
+                // Play first - critical for mobile to capture user gesture
+                await videoRef.current.play();
+                
+                // Auto-fullscreen on first play/interaction for mobile
+                if (!hasInteracted) {
+                    setHasInteracted(true);
+                    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                    if (isMobile) {
+                        enterFullscreen().catch(console.warn);
+                    }
+                }
+            } else {
+                videoRef.current.pause();
             }
-        }
-
-        if (videoRef.current.paused) {
-            videoRef.current.play();
-        } else {
-            videoRef.current.pause();
+        } catch (error) {
+            console.error("Playback failed:", error);
         }
     };
 
@@ -394,16 +392,16 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
                 </button>
 
                 {isMobile && (
-                    <button
-                        onClick={(e) => { e.stopPropagation(); togglePiP(); }}
-                        className="p-3 text-white hover:text-gray-300 transition-colors transform hover:scale-110 drop-shadow-md"
-                        title="Picture-in-Picture"
-                    >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m4 0V9a2 2 0 012-2h6a2 2 0 012 2v2M15 15h4v4h-4v-4z" />
-                        </svg>
-                    </button>
-                )}
+                            <button
+                                onClick={(e) => { e.stopPropagation(); togglePiP(); }}
+                                className="p-3 text-white hover:text-gray-300 transition-colors transform hover:scale-110"
+                                title="Picture-in-Picture"
+                            >
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m4 0V9a2 2 0 012-2h6a2 2 0 012 2v2M15 15h4v4h-4v-4z" />
+                                </svg>
+                            </button>
+                        )}
             </div>
 
             {/* Loading Spinner */}
@@ -425,17 +423,17 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
                 >
                     {/* -10s */}
                     {isMobile && (
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); handleSkip(-10); }}
-                            className="p-4 text-white/80 hover:text-white transition-all pointer-events-auto transform hover:scale-110 drop-shadow-md"
-                        >
-                            <svg className="w-10 h-10" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/>
-                                <text x="12" y="14" fontSize="7" fill="white" fontWeight="bold" textAnchor="middle" style={{ display: 'none' }}>10</text>
-                            </svg>
-                            <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] font-bold mt-0.5">10</span>
-                        </button>
-                    )}
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); handleSkip(-10); }}
+                        className="p-4 text-white/80 hover:text-white transition-all pointer-events-auto transform hover:scale-110"
+                    >
+                        <svg className="w-10 h-10" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/>
+                            <text x="12" y="14" fontSize="7" fill="white" fontWeight="bold" textAnchor="middle" style={{ display: 'none' }}>10</text>
+                        </svg>
+                        <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] font-bold mt-0.5">10</span>
+                    </button>
+                )}
 
                     {/* Play/Pause */}
                     <div 
@@ -457,10 +455,11 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
                     {isMobile && (
                         <button 
                             onClick={(e) => { e.stopPropagation(); handleSkip(10); }}
-                            className="p-4 text-white/80 hover:text-white transition-all pointer-events-auto transform hover:scale-110 drop-shadow-md"
+                            className="p-4 text-white/80 hover:text-white transition-all pointer-events-auto transform hover:scale-110"
                         >
                             <svg className="w-10 h-10" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/>
+                                <text x="12" y="14" fontSize="7" fill="white" fontWeight="bold" textAnchor="middle" style={{ display: 'none' }}>10</text>
                             </svg>
                             <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] font-bold mt-0.5">10</span>
                         </button>
