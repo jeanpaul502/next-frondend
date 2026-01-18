@@ -55,6 +55,8 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
     const movie: Movie | undefined = movieProp;
     const movieUrl = movie?.videoUrl || movie?.url || '';
 
+    const [hasInteracted, setHasInteracted] = useState(false);
+
     // Initialize Video & HLS
     useEffect(() => {
         if (!videoRef.current) return;
@@ -183,14 +185,108 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
     useEffect(() => {
         const originalOverflow = document.body.style.overflow;
         document.body.style.overflow = 'hidden';
+        
         return () => {
             document.body.style.overflow = originalOverflow;
+            if (screen.orientation && (screen.orientation as any).unlock) {
+                try {
+                    (screen.orientation as any).unlock();
+                } catch(e) {}
+            }
         };
     }, []);
+
+    const enterFullscreen = async () => {
+        const element = containerRef.current as any;
+        const videoElement = videoRef.current as any;
+        
+        if (!element) return;
+
+        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+        // iOS: Use native video fullscreen
+        if (isIOS && videoElement && videoElement.webkitEnterFullscreen) {
+            videoElement.webkitEnterFullscreen();
+            return;
+        }
+
+        // Android / Desktop: Use Container Fullscreen + Orientation Lock
+        const requestMethod = element.requestFullscreen || 
+                              element.webkitRequestFullscreen || 
+                              element.mozRequestFullScreen || 
+                              element.msRequestFullscreen;
+
+        if (requestMethod) {
+            try {
+                await requestMethod.call(element);
+                // Try to lock orientation
+                if (screen.orientation && (screen.orientation as any).lock) {
+                     try {
+                        await (screen.orientation as any).lock('landscape');
+                    } catch (e) {
+                        console.warn("Orientation lock failed:", e);
+                    }
+                }
+            } catch (e) {
+                console.error("Fullscreen request failed:", e);
+                // Fallback to video fullscreen if container fails
+                if (videoElement && videoElement.webkitEnterFullscreen) {
+                    videoElement.webkitEnterFullscreen();
+                }
+            }
+        } else if (videoElement && videoElement.webkitEnterFullscreen) {
+            videoElement.webkitEnterFullscreen();
+        }
+    };
+
+    const exitFullscreen = () => {
+        const doc = document as any;
+        if (doc.exitFullscreen) {
+            doc.exitFullscreen();
+        } else if (doc.webkitExitFullscreen) {
+            doc.webkitExitFullscreen();
+        } else if (doc.mozCancelFullScreen) {
+            doc.mozCancelFullScreen();
+        } else if (doc.msExitFullscreen) {
+            doc.msExitFullscreen();
+        }
+        
+        if (screen.orientation && (screen.orientation as any).unlock) {
+            try {
+                (screen.orientation as any).unlock();
+            } catch(e) {}
+        }
+    };
+
+    const toggleFullscreen = () => {
+        const doc = document as any;
+        const videoEl = videoRef.current as any;
+        const isFullscreen = doc.fullscreenElement || 
+                           doc.webkitFullscreenElement || 
+                           doc.mozFullScreenElement || 
+                           doc.msFullscreenElement ||
+                           (videoEl && videoEl.webkitDisplayingFullscreen);
+        
+        if (!isFullscreen) {
+            enterFullscreen();
+        } else {
+            exitFullscreen();
+        }
+    };
 
     // Actions
     const togglePlay = () => {
         if (!videoRef.current) return;
+
+        // Auto-fullscreen on first play/interaction for mobile
+        if (!hasInteracted) {
+            setHasInteracted(true);
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            if (isMobile) {
+                enterFullscreen();
+            }
+        }
+
         if (videoRef.current.paused) {
             videoRef.current.play();
         } else {
@@ -198,26 +294,41 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
         }
     };
 
+    const handleSkip = (seconds: number) => {
+        if (!videoRef.current) return;
+        const newTime = Math.min(Math.max(videoRef.current.currentTime + seconds, 0), duration);
+        videoRef.current.currentTime = newTime;
+        setCurrentTime(newTime);
+    };
+
+    const togglePiP = async () => {
+        if (!videoRef.current) return;
+        try {
+            if (document.pictureInPictureElement) {
+                await document.exitPictureInPicture();
+            } else if (videoRef.current.requestPictureInPicture) {
+                await videoRef.current.requestPictureInPicture();
+            }
+        } catch (error) {
+            console.error("PiP failed:", error);
+        }
+    };
+
     const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!videoRef.current) return;
         const time = parseFloat(e.target.value);
-        videoRef.current.currentTime = time;
-        setCurrentTime(time);
+        if (Number.isFinite(time)) {
+             videoRef.current.currentTime = time;
+             setCurrentTime(time);
+        }
     };
 
     const handleVolume = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!videoRef.current) return;
         const vol = parseFloat(e.target.value);
-        videoRef.current.volume = vol;
-        setVolume(vol);
-    };
-
-    const toggleFullscreen = () => {
-        if (!containerRef.current) return;
-        if (!document.fullscreenElement) {
-            containerRef.current.requestFullscreen();
-        } else {
-            document.exitFullscreen();
+        if (Number.isFinite(vol) && vol >= 0 && vol <= 1) {
+            videoRef.current.volume = vol;
+            setVolume(vol);
         }
     };
 
@@ -225,6 +336,11 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
         const minutes = Math.floor(time / 60);
         const seconds = Math.floor(time % 60);
         return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+    };
+
+    const handleClose = () => {
+        exitFullscreen();
+        onClose?.();
     };
 
     if (!movie) return null;
@@ -247,15 +363,25 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
                 onDoubleClick={toggleFullscreen}
             />
 
-            {/* Top Bar (Back Button) */}
-            <div className={`absolute top-0 left-0 w-full p-6 transition-opacity duration-300 z-20 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
+            {/* Top Bar (Back Button & PiP) */}
+            <div className={`absolute top-0 left-0 w-full p-6 flex justify-between items-start transition-opacity duration-300 z-20 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
                 <button
-                    onClick={(e) => { e.stopPropagation(); onClose?.(); }}
+                    onClick={(e) => { e.stopPropagation(); handleClose(); }}
                     className="p-3 bg-black/40 hover:bg-black/60 rounded-full text-white transition-colors backdrop-blur-md group-hover:scale-110"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+
+                <button
+                    onClick={(e) => { e.stopPropagation(); togglePiP(); }}
+                    className="p-3 bg-black/40 hover:bg-black/60 rounded-full text-white transition-colors backdrop-blur-md group-hover:scale-110"
+                    title="Picture-in-Picture"
+                >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m4 0V9a2 2 0 012-2h6a2 2 0 012 2v2M15 15h4v4h-4v-4z" />
                     </svg>
                 </button>
             </div>
@@ -272,17 +398,49 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
                 </div>
             )}
 
-            {/* Center Play Button */}
-            {!isPlaying && !isBuffering && (
+            {/* Center Controls (Skips & Play/Pause) */}
+            {!isBuffering && (showControls || !isPlaying) && (
                 <div 
-                    className="absolute inset-0 flex items-center justify-center cursor-pointer z-10"
-                    onClick={(e) => { e.stopPropagation(); togglePlay(); }}
+                    className="absolute inset-0 flex items-center justify-center gap-12 z-10 pointer-events-none"
                 >
-                    <div className="w-16 h-16 bg-black/30 rounded-full flex items-center justify-center backdrop-blur-md border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.5)] hover:bg-black/40 hover:scale-105 hover:border-white/40 transition-all duration-300 group/play">
-                        <svg className="w-8 h-8 text-white ml-1 drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M8 5v14l11-7z" />
+                    {/* -10s */}
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); handleSkip(-10); }}
+                        className="p-4 rounded-full bg-black/20 hover:bg-black/40 text-white/80 hover:text-white backdrop-blur-sm transition-all pointer-events-auto transform hover:scale-110"
+                    >
+                        <svg className="w-10 h-10" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/>
+                            <text x="12" y="14" fontSize="7" fill="white" fontWeight="bold" textAnchor="middle" style={{ display: 'none' }}>10</text>
                         </svg>
+                        <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] font-bold mt-0.5">10</span>
+                    </button>
+
+                    {/* Play/Pause */}
+                    <div 
+                        className="w-20 h-20 bg-black/30 rounded-full flex items-center justify-center backdrop-blur-md border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.5)] hover:bg-black/40 hover:scale-105 hover:border-white/40 transition-all duration-300 cursor-pointer pointer-events-auto group/play"
+                        onClick={(e) => { e.stopPropagation(); togglePlay(); }}
+                    >
+                        {isPlaying ? (
+                            <svg className="w-10 h-10 text-white drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+                            </svg>
+                        ) : (
+                            <svg className="w-10 h-10 text-white ml-1 drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z" />
+                            </svg>
+                        )}
                     </div>
+
+                    {/* +10s */}
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); handleSkip(10); }}
+                        className="p-4 rounded-full bg-black/20 hover:bg-black/40 text-white/80 hover:text-white backdrop-blur-sm transition-all pointer-events-auto transform hover:scale-110"
+                    >
+                        <svg className="w-10 h-10" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/>
+                        </svg>
+                        <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] font-bold mt-0.5">10</span>
+                    </button>
                 </div>
             )}
 
@@ -321,14 +479,6 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
                 {/* Buttons Row */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-6">
-                        <button onClick={togglePlay} className="text-white hover:text-blue-500 transition-colors transform hover:scale-110">
-                            {isPlaying ? (
-                                <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
-                            ) : (
-                                <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-                            )}
-                        </button>
-
                         <div className="flex items-center gap-3 group/volume">
                             <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
