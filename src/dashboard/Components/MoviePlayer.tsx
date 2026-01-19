@@ -247,14 +247,23 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
 
     const exitFullscreen = () => {
         const doc = document as any;
-        if (doc.exitFullscreen) {
-            doc.exitFullscreen();
-        } else if (doc.webkitExitFullscreen) {
-            doc.webkitExitFullscreen();
-        } else if (doc.mozCancelFullScreen) {
-            doc.mozCancelFullScreen();
-        } else if (doc.msExitFullscreen) {
-            doc.msExitFullscreen();
+        
+        // Check if we are actually in fullscreen before trying to exit
+        const isFullscreen = doc.fullscreenElement || 
+                           doc.webkitFullscreenElement || 
+                           doc.mozFullScreenElement || 
+                           doc.msFullscreenElement;
+
+        if (isFullscreen) {
+            if (doc.exitFullscreen) {
+                doc.exitFullscreen().catch(() => {}); // Catch potential errors
+            } else if (doc.webkitExitFullscreen) {
+                doc.webkitExitFullscreen();
+            } else if (doc.mozCancelFullScreen) {
+                doc.mozCancelFullScreen();
+            } else if (doc.msExitFullscreen) {
+                doc.msExitFullscreen();
+            }
         }
         
         if (screen.orientation && (screen.orientation as any).unlock) {
