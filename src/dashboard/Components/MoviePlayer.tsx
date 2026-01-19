@@ -435,20 +435,6 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
                     className={`absolute inset-0 flex items-center justify-center gap-12 z-10 transition-opacity duration-300 ${showControls || !isPlaying ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
                     onClick={(e) => { e.stopPropagation(); handleContainerClick(); }}
                 >
-                    {/* -10s */}
-                    {isMobile && (
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); handleSkip(-10); }}
-                            className="p-4 text-white/80 hover:text-white transition-all pointer-events-auto transform hover:scale-110 drop-shadow-md relative"
-                        >
-                            <svg className="w-12 h-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 15l-6 6m0 0l-6-6" />
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 21V9a9 9 0 019-9" />
-                            </svg>
-                            <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] font-bold mt-[2px] ml-[-1px]">10</span>
-                        </button>
-                    )}
-
                     {/* Play/Pause */}
                     <button 
                         className="w-14 h-14 bg-black/30 rounded-full flex items-center justify-center backdrop-blur-md border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.5)] hover:bg-black/40 hover:scale-105 hover:border-white/40 transition-all duration-300 cursor-pointer pointer-events-auto group/play"
@@ -464,20 +450,6 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
                             </svg>
                         )}
                     </button>
-
-                    {/* +10s */}
-                    {isMobile && (
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); handleSkip(10); }}
-                            className="p-4 text-white/80 hover:text-white transition-all pointer-events-auto transform hover:scale-110 drop-shadow-md relative"
-                        >
-                            <svg className="w-12 h-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 15l6 6m0 0l6-6" />
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 21V9a9 9 0 00-9-9" />
-                            </svg>
-                            <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] font-bold mt-[2px] ml-[1px]">10</span>
-                        </button>
-                    )}
                 </div>
             )}
 
