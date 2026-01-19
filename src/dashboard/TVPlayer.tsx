@@ -338,11 +338,28 @@ export const TVPlayer = () => {
     };
 
     const toggleFullscreen = () => {
-        if (!document.fullscreenElement) {
-            containerRef.current?.requestFullscreen();
+        if (!document.fullscreenElement && !(document as any).webkitFullscreenElement && !(document as any).mozFullScreenElement && !(document as any).msFullscreenElement) {
+            const element = containerRef.current as any;
+            if (element.requestFullscreen) {
+                element.requestFullscreen();
+            } else if (element.webkitRequestFullscreen) {
+                element.webkitRequestFullscreen();
+            } else if (element.mozRequestFullScreen) {
+                element.mozRequestFullScreen();
+            } else if (element.msRequestFullscreen) {
+                element.msRequestFullscreen();
+            }
             setIsFullscreen(true);
         } else {
-            document.exitFullscreen();
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if ((document as any).webkitExitFullscreen) {
+                (document as any).webkitExitFullscreen();
+            } else if ((document as any).mozCancelFullScreen) {
+                (document as any).mozCancelFullScreen();
+            } else if ((document as any).msExitFullscreen) {
+                (document as any).msExitFullscreen();
+            }
             setIsFullscreen(false);
         }
     };
@@ -351,7 +368,7 @@ export const TVPlayer = () => {
         if (showSidebar) {
             setShowSidebar(false);
         } else {
-            togglePlay();
+            setShowControls(!showControls);
         }
     };
 
@@ -535,7 +552,7 @@ export const TVPlayer = () => {
                         <img 
                             src={channelLogo} 
                             alt={channelName || 'Channel'} 
-                            className="h-12 w-auto object-contain drop-shadow-md"
+                            className="h-8 md:h-12 w-auto object-contain drop-shadow-md"
                             onError={(e) => {(e.target as HTMLImageElement).style.display = 'none';}}
                         />
                      ) : (
@@ -584,36 +601,6 @@ export const TVPlayer = () => {
                                     className="w-20 h-1 ml-2 bg-white/30 rounded-lg appearance-none cursor-pointer accent-blue-500"
                                 />
                             </div>
-                        </div>
-
-                        {/* Quality Settings */}
-                        <div className="relative">
-                            <button 
-                                onClick={() => setShowQualityMenu(!showQualityMenu)}
-                                className="text-white/90 hover:text-white text-xs font-bold tracking-wider px-2 py-1 rounded border border-white/20 hover:border-white/40 transition-all"
-                            >
-                                {videoQualityLabel}
-                            </button>
-                            {showQualityMenu && (
-                                <div className="absolute bottom-full left-0 mb-2 bg-black/90 border border-white/10 rounded-lg p-2 min-w-[120px] backdrop-blur-md">
-                                    <div className="text-xs font-bold text-gray-400 mb-2 px-2">Qualité</div>
-                                    <button
-                                        onClick={() => handleQualityChange(-1)}
-                                        className={`w-full text-left px-2 py-1.5 rounded text-xs ${currentLevel === -1 ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-white/10'}`}
-                                    >
-                                        Auto
-                                    </button>
-                                    {levels.map((level, index) => (
-                                        <button
-                                            key={index}
-                                            onClick={() => handleQualityChange(index)}
-                                            className={`w-full text-left px-2 py-1.5 rounded text-xs ${currentLevel === index ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-white/10'}`}
-                                        >
-                                            {level.height}p
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
                         </div>
 
                          {/* Audio Settings */}
@@ -680,7 +667,10 @@ export const TVPlayer = () => {
             </div>
 
             {/* Sidebar List (Original Logic Preserved) */}
-            <div className={`fixed right-0 top-0 bottom-0 w-80 bg-[#111827] border-l border-white/10 z-[60] flex flex-col transition-transform duration-300 ease-in-out ${showSidebar ? 'translate-x-0' : 'translate-x-full'}`}>
+            <div 
+                onClick={(e) => e.stopPropagation()}
+                className={`fixed right-0 top-0 bottom-0 w-80 bg-[#111827] border-l border-white/10 z-[60] flex flex-col transition-transform duration-300 ease-in-out ${showSidebar ? 'translate-x-0' : 'translate-x-full'}`}
+            >
                 <div className="p-4 border-b border-white/10 space-y-3">
                     {/* Sélecteur de Playlist */}
                     <div className="flex items-center gap-3">
@@ -756,7 +746,7 @@ export const TVPlayer = () => {
                                 {channel.url === channelUrl && (
                                     <div className="absolute left-0.5 top-1/2 -translate-y-1/2 h-5 w-1 bg-blue-400 rounded-full shadow-[0_0_10px_rgba(96,165,250,0.6)]"></div>
                                 )}
-                                <div className="w-12 h-8 flex items-center justify-center bg-black/20 rounded overflow-hidden flex-shrink-0">
+                                <div className="w-10 h-6 md:w-12 md:h-8 flex items-center justify-center bg-black/20 rounded overflow-hidden flex-shrink-0">
                                     {channel.logo ? (
                                         <img src={channel.logo} alt={channel.name} className="max-w-full max-h-full object-contain" />
                                     ) : (
