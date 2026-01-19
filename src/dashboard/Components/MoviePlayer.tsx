@@ -46,7 +46,7 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
     const [isPlaying, setIsPlaying] = useState(true);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
-    const [showControls, setShowControls] = useState(true);
+    const [showControls, setShowControls] = useState(false);
     const [volume, setVolume] = useState(1);
     const controlTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -77,13 +77,21 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
         const sourceUrl = getProxiedUrl(movieUrl);
 
         const handlePlay = () => {
-            setIsBuffering(false);
+            // setIsBuffering(false); // Removed to keep loading state until playback starts
             const playPromise = video.play();
             if (playPromise !== undefined) {
                 playPromise.catch((error) => {
                     console.warn("Autoplay prevented:", error);
                     setIsPlaying(false);
+                    setIsBuffering(false); // Show play button if autoplay fails
+                    setShowControls(true); // Show controls so user can click play
                 });
+            }
+            
+            // Force fullscreen on play (mobile experience)
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            if (isMobile && !document.fullscreenElement) {
+                enterFullscreen();
             }
         };
 
@@ -132,7 +140,7 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
         // Event Listeners
         const onTimeUpdate = () => {
             setCurrentTime(video.currentTime);
-            setIsBuffering(false);
+            // setIsBuffering(false); // Moved to onPlaying to ensure it only hides when actually playing
         };
         const onDurationChange = () => setDuration(video.duration);
         const onPlay = () => setIsPlaying(true);
@@ -293,20 +301,15 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
     const togglePlay = () => {
         if (!videoRef.current) return;
 
-        // Auto-fullscreen on first play/interaction for mobile
-        if (!hasInteracted) {
-            setHasInteracted(true);
-            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-            if (isMobile) {
-                enterFullscreen();
-            }
-        }
-
         if (videoRef.current.paused) {
             videoRef.current.play();
         } else {
             videoRef.current.pause();
         }
+    };
+
+    const handleContainerClick = () => {
+        setShowControls((prev) => !prev);
     };
 
     const handleSkip = (seconds: number) => {
@@ -360,13 +363,19 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
     };
 
     const formatTime = (time: number) => {
-        const minutes = Math.floor(time / 60);
+        if (isNaN(time)) return "0:00";
+        const hours = Math.floor(time / 3600);
+        const minutes = Math.floor((time % 3600) / 60);
         const seconds = Math.floor(time % 60);
+
+        if (hours > 0) {
+            return `${hours}:${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        }
         return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
     };
 
     const handleClose = () => {
-        exitFullscreen();
+        // Just close directly, let cleanup handle exitFullscreen
         onClose?.();
     };
 
@@ -377,16 +386,17 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
             ref={containerRef}
             className="fixed inset-0 z-[100] w-full h-full bg-black overflow-hidden font-sans group"
             onMouseMove={handleMouseMove}
-            onClick={togglePlay}
+            onClick={handleContainerClick}
         >
             {/* Video */}
             <video
                 ref={videoRef}
                 className="w-full h-full object-contain"
                 playsInline
+                autoPlay
                 preload="auto"
                 crossOrigin="anonymous"
-                onClick={(e) => { e.stopPropagation(); togglePlay(); }}
+                onClick={(e) => { e.stopPropagation(); handleContainerClick(); }}
                 onDoubleClick={toggleFullscreen}
             />
 
@@ -401,29 +411,15 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
                 </button>
-
-                {isMobile && (
-                    <button
-                        onClick={(e) => { e.stopPropagation(); togglePiP(); }}
-                        className="p-3 text-white hover:text-gray-300 transition-colors transform hover:scale-110 drop-shadow-md"
-                        title="Picture-in-Picture"
-                    >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m4 0V9a2 2 0 012-2h6a2 2 0 012 2v2M15 15h4v4h-4v-4z" />
-                        </svg>
-                    </button>
-                )}
             </div>
 
             {/* Loading Spinner */}
             {isBuffering && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10 bg-black/50 backdrop-blur-sm">
-                    <div className="flex items-center space-x-3 bg-black/60 px-6 py-3 rounded-full border border-white/10 backdrop-blur-md shadow-xl">
-                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/20 border-t-white"></div>
-                        <span className="text-white font-medium text-sm tracking-wide">
-                            {currentTime === 0 ? "Connexion..." : "Chargement..."}
-                        </span>
-                    </div>
+                    <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-600/30 border-t-blue-600 mb-4"></div>
+                    <span className="text-white font-medium text-sm tracking-wide">
+                        Chargement...
+                    </span>
                 </div>
             )}
 
@@ -438,26 +434,27 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
                             onClick={(e) => { e.stopPropagation(); handleSkip(-10); }}
                             className="p-4 text-white/80 hover:text-white transition-all pointer-events-auto transform hover:scale-110 drop-shadow-md"
                         >
-                            <svg className="w-10 h-10" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/>
-                                <text x="12" y="14" fontSize="7" fill="white" fontWeight="bold" textAnchor="middle" style={{ display: 'none' }}>10</text>
+                            <svg className="w-12 h-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 15l-6 6m0 0l-6-6m6 6V9a6 6 0 0112 0v3" transform="matrix(-1 0 0 1 24 0)" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 3v5h5" />
                             </svg>
-                            <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] font-bold mt-0.5">10</span>
+                            <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] font-bold mt-1">10</span>
                         </button>
                     )}
 
                     {/* Play/Pause */}
                     <div 
-                        className="w-20 h-20 bg-black/30 rounded-full flex items-center justify-center backdrop-blur-md border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.5)] hover:bg-black/40 hover:scale-105 hover:border-white/40 transition-all duration-300 cursor-pointer pointer-events-auto group/play"
+                        className="w-14 h-14 bg-black/30 rounded-full flex items-center justify-center backdrop-blur-md border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.5)] hover:bg-black/40 hover:scale-105 hover:border-white/40 transition-all duration-300 cursor-pointer pointer-events-auto group/play"
                         onClick={(e) => { e.stopPropagation(); togglePlay(); }}
                     >
                         {isPlaying ? (
-                            <svg className="w-10 h-10 text-white drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+                            <svg className="w-7 h-7 text-white drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M6.75 5.25a.75.75 0 01.75-.75H9a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H7.5a.75.75 0 01-.75-.75V5.25zm7.5 0A.75.75 0 0115 4.5h1.5a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H15a.75.75 0 01-.75-.75V5.25z" />
                             </svg>
                         ) : (
-                            <svg className="w-10 h-10 text-white ml-1 drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M8 5v14l11-7z" />
+                            <svg className="w-7 h-7 text-white ml-1 drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
                             </svg>
                         )}
                     </div>
@@ -468,10 +465,11 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
                             onClick={(e) => { e.stopPropagation(); handleSkip(10); }}
                             className="p-4 text-white/80 hover:text-white transition-all pointer-events-auto transform hover:scale-110 drop-shadow-md"
                         >
-                            <svg className="w-10 h-10" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/>
+                            <svg className="w-12 h-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M21 3v5h-5" />
                             </svg>
-                            <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] font-bold mt-0.5">10</span>
+                            <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] font-bold mt-1">10</span>
                         </button>
                     )}
                 </div>
@@ -512,30 +510,29 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
                 {/* Buttons Row */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-6">
-                        {!isMobile && (
-                            <div className="flex items-center gap-3 group/volume relative">
-                                <button onClick={toggleMute} className="text-white hover:text-blue-400 transition-colors focus:outline-none drop-shadow-md">
-                                    {volume === 0 ? (
-                                        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                                            <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z" />
-                                        </svg>
-                                    ) : (
-                                        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                                            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
-                                        </svg>
-                                    )}
-                                </button>
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="1"
-                                    step="0.1"
-                                    value={volume}
-                                    onChange={handleVolume}
-                                    className="w-24 h-1 accent-blue-600 cursor-pointer opacity-0 group-hover/volume:opacity-100 transition-opacity duration-200"
-                                />
-                            </div>
-                        )}
+                        {/* Volume Control - Always Visible */}
+                        <div className="flex items-center gap-3 group/volume relative">
+                            <button onClick={toggleMute} className="text-white hover:text-blue-400 transition-colors focus:outline-none drop-shadow-md">
+                                {volume === 0 ? (
+                                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z" />
+                                    </svg>
+                                ) : (
+                                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
+                                    </svg>
+                                )}
+                            </button>
+                            <input
+                                type="range"
+                                min="0"
+                                max="1"
+                                step="0.1"
+                                value={volume}
+                                onChange={handleVolume}
+                                className="w-24 h-1 accent-blue-600 cursor-pointer opacity-0 group-hover/volume:opacity-100 transition-opacity duration-200"
+                            />
+                        </div>
                     </div>
 
                     <div className="flex items-center gap-4">
