@@ -234,7 +234,7 @@ export const MovieDetails = ({ movie, onClose, userCountry = 'France', onPlay, a
                     tmdbId: parsedTmdbId,
                     title: movie.title,
                     posterPath: posterPath,
-                    // preferences: notificationPrefs // Temporarily disabled until backend update
+                    preferences: notificationPrefs
                 })
             });
 
@@ -680,7 +680,7 @@ export const MovieDetails = ({ movie, onClose, userCountry = 'France', onPlay, a
                             <div className="p-4 md:p-6 border-t border-white/10 bg-white/[0.02] relative z-10">
                                 <button
                                     onClick={submitRequest}
-                                    disabled={requestLoading}
+                                    disabled={requestLoading || (!notificationPrefs.email && !notificationPrefs.whatsapp && !notificationPrefs.telegram)}
                                     className="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-bold text-sm rounded-xl transition-all shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2.5 cursor-pointer"
                                 >
                                     {requestLoading ? (

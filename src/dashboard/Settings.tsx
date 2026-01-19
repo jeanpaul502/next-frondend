@@ -21,6 +21,9 @@ interface UserProfile {
     emailVerified?: boolean;
     createdAt?: string;
     emailNotifications?: boolean;
+    whatsappPhone?: string;
+    telegramChatId?: string;
+    telegramUsername?: string;
 }
 
 interface Session {
@@ -179,6 +182,13 @@ export default function Settings() {
                         emailNotifications: userData.emailNotifications === true || userData.emailNotifications === 'true',
                         memberSince: memberSinceStr
                     }));
+
+                    setNotificationChannels(prev => ({
+                        ...prev,
+                        email: userData.emailNotifications === true || userData.emailNotifications === 'true',
+                        whatsapp: !!userData.whatsappPhone,
+                        telegram: !!userData.telegramChatId || !!userData.telegramUsername
+                    }));
                 } else {
                     console.error('Failed to fetch profile:', response.status);
                     if (response.status === 401) {
@@ -199,6 +209,9 @@ export default function Settings() {
             if (profile.firstName !== undefined) body.firstName = profile.firstName;
             if (profile.lastName !== undefined) body.lastName = profile.lastName;
             if (profile.emailNotifications !== undefined) body.emailNotifications = profile.emailNotifications;
+            body.whatsappPhone = notificationChannels.whatsapp ? (profile.whatsappPhone || '') : '';
+            body.telegramChatId = notificationChannels.telegram ? (profile.telegramChatId || '') : '';
+            body.telegramUsername = notificationChannels.telegram ? (profile.telegramUsername || '') : '';
 
             let response = await fetch(`${API_BASE_URL}/users/me`, {
                 method: 'PATCH',
@@ -767,6 +780,12 @@ export default function Settings() {
                                                                 });
                                                             } else {
                                                                 setNotificationChannels(prev => ({ ...prev, [item.id]: isChecking }));
+                                                                if (!isChecking && item.id === 'whatsapp') {
+                                                                    setProfile(prev => ({ ...prev, whatsappPhone: '' }));
+                                                                }
+                                                                if (!isChecking && item.id === 'telegram') {
+                                                                    setProfile(prev => ({ ...prev, telegramChatId: '', telegramUsername: '' }));
+                                                                }
                                                             }
                                                         }}
                                                         className="sr-only peer"
@@ -1158,6 +1177,17 @@ export default function Settings() {
                                         onClick={() => {
                                             setVerificationModal(prev => ({ ...prev, isLoading: true }));
                                             setTimeout(() => {
+                                                if (verificationModal.type === 'whatsapp') {
+                                                    const digitsOnly = `${selectedCountry.dial}${verificationModal.value}`.replace(/[^\d]/g, '');
+                                                    const phone = digitsOnly ? `+${digitsOnly}` : '';
+                                                    setProfile(prev => ({ ...prev, whatsappPhone: phone }));
+                                                }
+
+                                                if (verificationModal.type === 'telegram') {
+                                                    const username = verificationModal.value.trim();
+                                                    setProfile(prev => ({ ...prev, telegramUsername: username, telegramChatId: '' }));
+                                                }
+
                                                 setNotificationChannels(prev => ({ ...prev, [verificationModal.type!]: true }));
                                                 setVerificationModal(prev => ({ ...prev, type: null, isLoading: false, step: 'input', value: '', code: '' }));
                                                 showSuccessToast('Notification activée avec succès !');

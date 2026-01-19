@@ -8,6 +8,9 @@ interface MovieRequest {
     title: string;
     posterPath?: string;
     status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'COMPLETED';
+    notifyEmail?: boolean;
+    notifyWhatsapp?: boolean;
+    notifyTelegram?: boolean;
     createdAt: string;
     user: {
         id: string;
@@ -81,6 +84,24 @@ const Requests = () => {
         }
     };
 
+    const getChannels = (req: MovieRequest) => {
+        const channels: Array<{ key: string; label: string; className: string; icon: string }> = [];
+
+        if (req.notifyEmail) {
+            channels.push({ key: 'email', label: 'Email', className: 'text-blue-400 bg-blue-400/10 border-blue-400/20', icon: 'solar:letter-bold' });
+        }
+        if (req.notifyWhatsapp) {
+            channels.push({ key: 'whatsapp', label: 'WhatsApp', className: 'text-green-400 bg-green-400/10 border-green-400/20', icon: 'logos:whatsapp-icon' });
+        }
+        if (req.notifyTelegram) {
+            channels.push({ key: 'telegram', label: 'Telegram', className: 'text-sky-400 bg-sky-400/10 border-sky-400/20', icon: 'logos:telegram' });
+        }
+
+        return channels.length > 0
+            ? channels
+            : [{ key: 'email', label: 'Email', className: 'text-blue-400 bg-blue-400/10 border-blue-400/20', icon: 'solar:letter-bold' }];
+    };
+
     return (
         <div className="space-y-6 animate-in fade-in duration-300">
             <div className="flex items-center justify-between">
@@ -97,6 +118,7 @@ const Requests = () => {
                             <tr>
                                 <th className="px-6 py-4 font-semibold">Film</th>
                                 <th className="px-6 py-4 font-semibold">Utilisateur</th>
+                                <th className="px-6 py-4 font-semibold">Canal</th>
                                 <th className="px-6 py-4 font-semibold">Date</th>
                                 <th className="px-6 py-4 font-semibold">Statut</th>
                                 <th className="px-6 py-4 font-semibold text-right">Actions</th>
@@ -126,6 +148,21 @@ const Requests = () => {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="text-white font-medium">{req.user.firstName} {req.user.lastName}</div>
+                                            <div className="text-xs text-gray-500">{req.user.email}</div>
+                                            <div className="text-xs text-gray-500">{req.user.country}</div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex flex-wrap gap-2">
+                                                {getChannels(req).map((c) => (
+                                                    <span
+                                                        key={c.key}
+                                                        className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium ${c.className}`}
+                                                    >
+                                                        <Icon icon={c.icon} width={14} />
+                                                        {c.label}
+                                                    </span>
+                                                ))}
+                                            </div>
                                         </td>
                                         <td className="px-6 py-4">
                                             {new Date(req.createdAt).toLocaleDateString()}
@@ -170,7 +207,7 @@ const Requests = () => {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
                                         Aucune demande pour le moment
                                     </td>
                                 </tr>

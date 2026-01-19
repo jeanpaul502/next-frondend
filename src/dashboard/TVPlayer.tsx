@@ -108,6 +108,19 @@ export const TVPlayer = () => {
         setIsLoading(true);
         setError(null);
         setVideoQualityLabel('Auto'); // Reset label
+        setIsPlaying(true); // Reset play state for new channel
+
+        const handlePlayPromise = (promise: Promise<void> | undefined) => {
+            if (promise !== undefined) {
+                promise.catch(error => {
+                    if (error.name === 'AbortError') {
+                        // Ignore abort errors as they happen when switching channels
+                    } else {
+                        setIsPlaying(false);
+                    }
+                });
+            }
+        };
 
         const initPlayer = () => {
             if (Hls.isSupported()) {
@@ -131,7 +144,7 @@ export const TVPlayer = () => {
                     hls.currentLevel = -1;
                     setCurrentLevel(-1);
                     setVideoQualityLabel('Auto');
-                    videoRef.current?.play().catch(() => setIsPlaying(false));
+                    handlePlayPromise(videoRef.current?.play());
                 });
 
                 hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, (event, data) => {
@@ -187,7 +200,7 @@ export const TVPlayer = () => {
                 videoRef.current.src = channelUrl;
                 videoRef.current.addEventListener('loadedmetadata', () => {
                     setIsLoading(false);
-                    videoRef.current?.play().catch(() => setIsPlaying(false));
+                    handlePlayPromise(videoRef.current?.play());
                 });
                 videoRef.current.addEventListener('error', () => {
                     setError("Impossible de charger le flux.");
@@ -376,7 +389,6 @@ export const TVPlayer = () => {
 
     const handleChannelClick = (channel: Channel) => {
         // Naviguer vers la nouvelle chaîne en remplaçant l'URL actuelle
-        // Cela va déclencher le useEffect de l'initialisation du lecteur
         router.push(`/watch/tv?url=${encodeURIComponent(channel.url)}&name=${encodeURIComponent(channel.name)}&logo=${encodeURIComponent(channel.logo || '')}&playlistId=${selectedPlaylist?.id}`);
     };
 
@@ -402,129 +414,58 @@ export const TVPlayer = () => {
         }
     };
 
+    const handleClose = () => {
+        router.back();
+    };
+
     if (!channelUrl) return null;
 
     return (
         <div
             ref={containerRef}
-            className="fixed inset-0 bg-black z-50 group select-none"
+            className="fixed inset-0 z-[100] w-full h-full bg-black overflow-hidden font-sans group"
             onMouseMove={handleMouseMove}
-            onMouseLeave={() => {
-                if (!showSidebar) setShowControls(false);
-            }}
+            onClick={handleScreenClick}
         >
-            {/* Zone de clic pour l'écran de lecture */}
-            <div
-                className="absolute inset-0 z-0"
-                onClick={handleScreenClick}
+            {/* Video */}
+            <video
+                ref={videoRef}
+                className={`w-full h-full object-contain transition-all duration-300 ${showSidebar && !isMobile ? 'pr-80' : ''}`}
+                playsInline
+                autoPlay
+                preload="auto"
+                crossOrigin="anonymous"
+                onClick={(e) => { e.stopPropagation(); handleScreenClick(); }}
+                onDoubleClick={toggleFullscreen}
+            />
+
+            {/* Top Bar (Back Button) */}
+            <div 
+                className={`absolute top-0 left-0 w-full p-6 flex justify-between items-start transition-opacity duration-300 z-20 ${showControls ? 'opacity-100' : 'opacity-0'}`}
+                onClick={(e) => { e.stopPropagation(); handleScreenClick(); }}
             >
-                <video
-                    ref={videoRef}
-                    className={`h-full bg-black transition-all duration-300 ${isFullscreen
-                        ? 'w-full object-contain'
-                        : 'w-[100%] object-cover'
-                        } ${showSidebar ? 'pr-80' : ''}`}
-                    playsInline
-                />
+                <button
+                    onClick={(e) => { e.stopPropagation(); handleClose(); }}
+                    className="p-3 bg-black/40 hover:bg-black/60 rounded-full text-white transition-colors backdrop-blur-md group-hover:scale-110 pointer-events-auto"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
             </div>
 
-            {/* En-tête avec bouton retour */}
-            <div className={`w-full absolute top-0 right-0 left-0 pointer-events-none z-20 transition-all duration-500 ease-in-out ${showControls || !isPlaying || showSidebar ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full'
-                }`}>
-                <div className="absolute w-full transition-all z-10 top-0 left-0 right-0 h-[120px] bg-gradient-to-b to-transparent from-black/50"></div>
-                <div className={`relative z-20 ${isMobile ? 'p-4' : 'p-8'}`}>
-                    <div className="flex w-full justify-between items-center">
-                        <div className="flex flex-row gap-4">
-                            <div className="flex flex-row items-center">
-                                <div className="pointer-events-auto flex flex-row items-center">
-                                    <button
-                                        className={`flex items-center justify-center font-bold whitespace-nowrap relative overflow-hidden transition-all transform-gpu text-sm rounded-md text-white hover:text-gray-300 cursor-pointer gap-2 bg-black/20 hover:bg-black/40 backdrop-blur-sm border border-white/10 ${isMobile ? 'h-12 w-12 rounded-full p-0' : 'h-9 px-3'}`}
-                                        onClick={() => router.push('/channels')}
-                                    >
-                                        {isMobile ? (
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                                <path d="M18 6 6 18" />
-                                                <path d="m6 6 12 12" />
-                                            </svg>
-                                        ) : (
-                                            <>
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                                    <path d="m15 18-6-6 6-6" />
-                                                </svg>
-                                                Retour
-                                            </>
-                                        )}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Mobile Center Controls - Gros boutons Play/Skip */}
-            {isMobile && showControls && (
-                <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
-                    <div className="flex items-center gap-8 pointer-events-auto">
-                        {/* Skip Back -10s */}
-                        <button
-                            onClick={(e) => { e.stopPropagation(); seek(-10); }}
-                            className="relative w-14 h-14 flex items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 transition-all active:scale-95"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                                <path d="M3 3v5h5" />
-                            </svg>
-                            <span className="absolute text-[9px] font-black mt-1">10</span>
-                        </button>
-
-                        {/* Play/Pause */}
-                        <button
-                            onClick={(e) => { e.stopPropagation(); togglePlay(); }}
-                            className="w-20 h-20 flex items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-md hover:bg-white/20 transition-all active:scale-95 border border-white/20"
-                        >
-                            {isPlaying ? (
-                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
-                                    <path fillRule="evenodd" d="M6.75 5.25a.75.75 0 0 1 .75-.75H9a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H7.5a.75.75 0 0 1-.75-.75V5.25Zm7.5 0A.75.75 0 0 1 15 4.5h1.5a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H15a.75.75 0 0 1-.75-.75V5.25Z" clipRule="evenodd" />
-                                </svg>
-                            ) : (
-                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="currentColor" className="ml-1">
-                                    <path fillRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" clipRule="evenodd" />
-                                </svg>
-                            )}
-                        </button>
-
-                        {/* Skip Forward +10s */}
-                        <button
-                            onClick={(e) => { e.stopPropagation(); seek(10); }}
-                            className="relative w-14 h-14 flex items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 transition-all active:scale-95"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
-                                <path d="M21 3v5h-5" />
-                            </svg>
-                            <span className="absolute text-[9px] font-black mt-1">10</span>
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {/* Indicateur de chargement */}
+            {/* Loading Spinner */}
             {isLoading && !error && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 z-30 pointer-events-none">
-                    <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mb-4"></div>
-                    <div className="flex items-center gap-1">
-                        <span className="text-white font-medium text-lg tracking-wider">Chargement</span>
-                        <div className="flex gap-1">
-                            <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                            <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                            <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce"></div>
-                        </div>
-                    </div>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10 bg-black/50 backdrop-blur-sm">
+                    <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-600/30 border-t-blue-600 mb-4"></div>
+                    <span className="text-white font-medium text-sm tracking-wide">
+                        Chargement...
+                    </span>
                 </div>
             )}
 
-            {/* Message d'erreur */}
+            {/* Error Message */}
             {error && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-40">
                     <div className="text-center p-6 bg-red-500/10 border border-red-500/50 rounded-xl">
@@ -539,9 +480,207 @@ export const TVPlayer = () => {
                 </div>
             )}
 
-            {/* Sidebar Liste des Chaînes */}
-            <div className={`fixed right-0 top-0 bottom-0 w-80 bg-[#111827] border-l border-white/10 z-[60] flex flex-col transition-transform duration-300 ease-in-out ${showSidebar ? 'translate-x-0' : 'translate-x-full'
-                }`}>
+            {/* Center Controls (Play/Pause) - Only show if not loading */}
+            {!isLoading && !error && (
+                <div 
+                    className={`absolute inset-0 flex items-center justify-center gap-12 z-10 transition-opacity duration-300 ${showControls || !isPlaying ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+                    onClick={(e) => { e.stopPropagation(); handleScreenClick(); }}
+                >
+                    {/* Prev Channel (Desktop) */}
+                    {!isMobile && (
+                         <button 
+                            onClick={(e) => { e.stopPropagation(); handlePrevChannel(); }}
+                            className="p-4 rounded-full text-white/50 hover:text-white hover:bg-white/10 transition-all pointer-events-auto"
+                        >
+                            <ChevronLeft className="w-10 h-10" />
+                        </button>
+                    )}
+
+                    {/* Play/Pause */}
+                    <button 
+                        className="w-14 h-14 bg-black/30 rounded-full flex items-center justify-center backdrop-blur-md border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.5)] hover:bg-black/40 hover:scale-105 hover:border-white/40 transition-all duration-300 cursor-pointer pointer-events-auto group/play"
+                        onClick={(e) => { e.stopPropagation(); togglePlay(); }}
+                    >
+                        {isPlaying ? (
+                            <svg className="w-7 h-7 text-white drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M6.75 5.25a.75.75 0 01.75-.75H9a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H7.5a.75.75 0 01-.75-.75V5.25zm7.5 0A.75.75 0 0115 4.5h1.5a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H15a.75.75 0 01-.75-.75V5.25z" />
+                            </svg>
+                        ) : (
+                            <svg className="w-7 h-7 text-white ml-1 drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+                            </svg>
+                        )}
+                    </button>
+
+                    {/* Next Channel (Desktop) */}
+                    {!isMobile && (
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); handleNextChannel(); }}
+                            className="p-4 rounded-full text-white/50 hover:text-white hover:bg-white/10 transition-all pointer-events-auto"
+                        >
+                            <ChevronRight className="w-10 h-10" />
+                        </button>
+                    )}
+                </div>
+            )}
+
+            {/* Bottom Controls */}
+            <div
+                className={`absolute bottom-0 left-0 w-full pt-12 pb-6 px-6 transition-opacity duration-300 z-20 ${showControls ? 'opacity-100' : 'opacity-0'} ${showSidebar && !isMobile ? 'pr-80' : ''}`}
+                onClick={(e) => e.stopPropagation()}
+            >
+                {/* Channel Logo / Name */}
+                <div className="mb-4 flex items-center">
+                     {channelLogo ? (
+                        <img 
+                            src={channelLogo} 
+                            alt={channelName || 'Channel'} 
+                            className="h-12 w-auto object-contain drop-shadow-md"
+                            onError={(e) => {(e.target as HTMLImageElement).style.display = 'none';}}
+                        />
+                     ) : (
+                        <div className="text-white/90 font-medium text-lg drop-shadow-md">
+                            {channelName || 'Live TV'}
+                        </div>
+                     )}
+                </div>
+
+                {/* Progress Bar (Visual only for Live TV) */}
+                <div className="w-full mb-4 flex items-center gap-4">
+                    <span className="text-red-500 font-bold uppercase tracking-wider animate-pulse text-xs">
+                        Live
+                    </span>
+                    <div className="relative flex-1 h-1.5 bg-white/20 rounded-full">
+                        <div className="absolute top-0 left-0 h-full w-full bg-gradient-to-r from-blue-600 to-blue-400 rounded-full opacity-80" />
+                    </div>
+                </div>
+
+                {/* Controls Row */}
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-6">
+                        {/* Volume Control */}
+                        <div className="flex items-center gap-3 group/volume relative">
+                            <button onClick={toggleMute} className="text-white hover:text-blue-400 transition-colors focus:outline-none drop-shadow-md">
+                                {volume === 0 ? (
+                                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M3.75 3.75L20.25 20.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                                        <path d="M11.25 5.25L6.75 9.75H3.75V14.25H6.75L11.25 18.75V5.25Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                ) : (
+                                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M11.25 5.25L6.75 9.75H3.75V14.25H6.75L11.25 18.75V5.25Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                        <path d="M15.5 8.5C16.5 9.5 16.5 14.5 15.5 15.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                )}
+                            </button>
+                            <div className="w-0 overflow-hidden group-hover/volume:w-24 transition-all duration-300 ease-out">
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="1"
+                                    step="0.05"
+                                    value={volume}
+                                    onChange={handleVolumeChange}
+                                    className="w-20 h-1 ml-2 bg-white/30 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Quality Settings */}
+                        <div className="relative">
+                            <button 
+                                onClick={() => setShowQualityMenu(!showQualityMenu)}
+                                className="text-white/90 hover:text-white text-xs font-bold tracking-wider px-2 py-1 rounded border border-white/20 hover:border-white/40 transition-all"
+                            >
+                                {videoQualityLabel}
+                            </button>
+                            {showQualityMenu && (
+                                <div className="absolute bottom-full left-0 mb-2 bg-black/90 border border-white/10 rounded-lg p-2 min-w-[120px] backdrop-blur-md">
+                                    <div className="text-xs font-bold text-gray-400 mb-2 px-2">Qualité</div>
+                                    <button
+                                        onClick={() => handleQualityChange(-1)}
+                                        className={`w-full text-left px-2 py-1.5 rounded text-xs ${currentLevel === -1 ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-white/10'}`}
+                                    >
+                                        Auto
+                                    </button>
+                                    {levels.map((level, index) => (
+                                        <button
+                                            key={index}
+                                            onClick={() => handleQualityChange(index)}
+                                            className={`w-full text-left px-2 py-1.5 rounded text-xs ${currentLevel === index ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-white/10'}`}
+                                        >
+                                            {level.height}p
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                         {/* Audio Settings */}
+                         {audioTracks.length > 1 && (
+                            <div className="relative">
+                                <button 
+                                    onClick={() => setShowAudioMenu(!showAudioMenu)}
+                                    className="text-white hover:text-blue-400 transition-colors"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M21 15V6" />
+                                        <path d="M18.5 18a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />
+                                        <path d="M12 12H3" />
+                                        <path d="M16 6H3" />
+                                        <path d="M12 18H3" />
+                                    </svg>
+                                </button>
+                                {showAudioMenu && (
+                                    <div className="absolute bottom-full left-0 mb-2 bg-black/90 border border-white/10 rounded-lg p-2 min-w-[150px] backdrop-blur-md">
+                                        <div className="text-xs font-bold text-gray-400 mb-2 px-2">Audio</div>
+                                        {audioTracks.map((track, index) => (
+                                            <button
+                                                key={index}
+                                                onClick={() => handleAudioTrackChange(index)}
+                                                className={`w-full text-left px-2 py-1.5 rounded text-xs ${currentAudioTrack === index ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-white/10'}`}
+                                            >
+                                                {track.name || `Piste ${index + 1}`}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="flex items-center gap-6">
+                        {/* Sidebar Toggle (Bottom Right) */}
+                        <button
+                            onClick={(e) => { e.stopPropagation(); setShowSidebar(!showSidebar); }}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors backdrop-blur-md pointer-events-auto ${showSidebar ? 'bg-blue-600 text-white' : 'text-white hover:bg-white/10'}`}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="8" y1="6" x2="21" y2="6"></line>
+                                <line x1="8" y1="12" x2="21" y2="12"></line>
+                                <line x1="8" y1="18" x2="21" y2="18"></line>
+                                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                            </svg>
+                            <span className="font-medium text-sm hidden md:inline">Chaînes</span>
+                        </button>
+
+                        {/* Fullscreen */}
+                        <button 
+                            onClick={toggleFullscreen}
+                            className="text-white hover:text-blue-400 transition-colors focus:outline-none drop-shadow-md transform hover:scale-110"
+                        >
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Sidebar List (Original Logic Preserved) */}
+            <div className={`fixed right-0 top-0 bottom-0 w-80 bg-[#111827] border-l border-white/10 z-[60] flex flex-col transition-transform duration-300 ease-in-out ${showSidebar ? 'translate-x-0' : 'translate-x-full'}`}>
                 <div className="p-4 border-b border-white/10 space-y-3">
                     {/* Sélecteur de Playlist */}
                     <div className="flex items-center gap-3">
@@ -646,273 +785,6 @@ export const TVPlayer = () => {
                             </div>
                         ))
                     )}
-                </div>
-            </div>
-
-            {/* Contrôles */}
-            <div className={`absolute bottom-0 left-0 right-0 transition-all duration-500 ease-in-out z-20 ${(showControls || !isPlaying || showSidebar) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-full'
-                } ${showSidebar ? 'pr-80' : ''}`}>
-                {/* Bande noire en bas */}
-                <div className={`absolute w-full transition-all bottom-0 left-0 right-0 bg-black z-10 ${isFullscreen ? 'h-[calc(100%-90px)]' : 'h-[calc(100%-140px)]'
-                    }`}></div>
-
-                <div className="relative z-20 p-8 pt-2">
-                    <div className="flex flex-col w-full justify-between md:gap-1.5">
-                        {/* Titre et Badge Direct */}
-                        <div className="flex justify-between mb-0" dir="ltr">
-                            <div className="flex flex-row justify-between items-end w-full pointer-events-none">
-                                <div className="w-full flex flex-row items-end">
-                                    {channelLogo ? (
-                                        <img
-                                            src={channelLogo}
-                                            alt={channelName || "Chaîne"}
-                                            className="h-12 object-contain drop-shadow-lg"
-                                            onError={(e) => {
-                                                (e.target as HTMLImageElement).style.display = 'none';
-                                                (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
-                                            }}
-                                        />
-                                    ) : null}
-                                    <span className={`text-sm text-white drop-shadow-lg font-medium ml-3 mb-1`}>
-                                        {channelName}
-                                    </span>
-                                </div>
-                                <div className="flex items-center gap-2 px-3 py-1 bg-green-500 rounded-md shadow-lg animate-pulse">
-                                    <div className="w-2 h-2 bg-white rounded-full" />
-                                    <span className="text-xs font-bold text-white uppercase tracking-wider">Direct</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Barre de progression (Visuelle pour le design, pleine pour le direct) */}
-                        <div className="flex items-center space-x-3 pointer-events-auto mb-0">
-                            <div className="group relative w-full h-10 flex items-center select-none">
-                                <div className="w-full h-1 bg-white/25 rounded-full overflow-hidden">
-                                    <div
-                                        className="h-full bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 w-full"
-                                    ></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Contrôles principaux (Desktop uniquement) */}
-                        <div className="hidden md:flex justify-between pointer-events-auto" dir="ltr">
-                            <div className="flex items-center gap-3">
-                                {/* Bouton Play/Pause */}
-                                <div className="flex items-center justify-center font-medium whitespace-nowrap relative overflow-hidden transition-all h-10 text-sm rounded-md cursor-pointer text-white bg-opacity-20 hover:bg-opacity-15 backdrop-blur-sm transform-gpu bg-white/5 py-0 px-0">
-                                    <button className="w-full h-full px-3 py-2.5 cursor-pointer" onClick={(e) => {
-                                        e.stopPropagation();
-                                        togglePlay();
-                                    }}>
-                                        {isPlaying ? (
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-                                                <path fillRule="evenodd" d="M6.75 5.25a.75.75 0 0 1 .75-.75H9a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H7.5a.75.75 0 0 1-.75-.75V5.25Zm7.5 0A.75.75 0 0 1 15 4.5h1.5a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H15a.75.75 0 0 1-.75-.75V5.25Z" clipRule="evenodd" />
-                                            </svg>
-                                        ) : (
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-                                                <path fillRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" clipRule="evenodd" />
-                                            </svg>
-                                        )}
-                                    </button>
-                                </div>
-
-                                {/* Boutons Précédent/Suivant */}
-                                <div className="flex items-center gap-2">
-                                    <div className="flex items-center justify-center font-medium whitespace-nowrap relative overflow-hidden transition-all h-10 text-sm rounded-md cursor-pointer text-white bg-opacity-20 hover:bg-opacity-15 backdrop-blur-sm transform-gpu bg-white/5 py-0 px-0 group/btn">
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handlePrevChannel();
-                                            }}
-                                            className="w-full h-full px-3 flex items-center gap-1 group-hover/btn:scale-105 transition-transform duration-200 cursor-pointer"
-                                            title="Chaîne précédente"
-                                        >
-                                            <ChevronLeft className="w-5 h-5" />
-                                            <span>Préc.</span>
-                                        </button>
-                                    </div>
-                                    <div className="flex items-center justify-center font-medium whitespace-nowrap relative overflow-hidden transition-all h-10 text-sm rounded-md cursor-pointer text-white bg-opacity-20 hover:bg-opacity-15 backdrop-blur-sm transform-gpu bg-white/5 py-0 px-0 group/btn">
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleNextChannel();
-                                            }}
-                                            className="w-full h-full px-3 flex items-center gap-1 group-hover/btn:scale-105 transition-transform duration-200 cursor-pointer"
-                                            title="Chaîne suivante"
-                                        >
-                                            <span>Suiv.</span>
-                                            <ChevronRight className="w-5 h-5" />
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Contrôle du volume */}
-                                <div
-                                    className="relative"
-                                    onMouseEnter={() => setShowVolumeSlider(true)}
-                                    onMouseLeave={() => setShowVolumeSlider(false)}
-                                >
-                                    <div className="justify-center font-medium whitespace-nowrap relative overflow-hidden transition-all h-10 text-sm px-4 rounded-md text-white bg-opacity-20 hover:bg-opacity-15 backdrop-blur-sm transform-gpu bg-white/5 pointer-events-auto flex items-center py-0 pr-1 cursor-pointer">
-                                        <button
-                                            type="button"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                toggleMute();
-                                            }}
-                                            className="pr-4 -ml-1 text-2xl text-white flex items-center cursor-pointer"
-                                        >
-                                            {isMuted || volume === 0 ? (
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-                                                    <path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"></path>
-                                                    <path d="M2 2l20 20"></path>
-                                                </svg>
-                                            ) : (
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-                                                    <path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"></path>
-                                                    <path d="M16 9a5 5 0 0 1 0 6"></path>
-                                                    <path d="M19.364 18.364a9 9 0 0 0 0-12.728"></path>
-                                                </svg>
-                                            )}
-                                        </button>
-
-                                        <div className={`linear -ml-2 overflow-hidden transition-[width,opacity,padding] duration-300 ${showVolumeSlider ? 'w-24 opacity-100 px-2' : 'w-0 opacity-0 px-0'
-                                            }`}>
-                                            <div className="flex h-10 w-full items-center">
-                                                <div className="relative h-1 flex-1 rounded-full bg-white bg-opacity-25 cursor-pointer">
-                                                    <div
-                                                        className="absolute inset-y-0 left-0 flex items-center justify-end rounded-full bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500"
-                                                        style={{ width: `${isMuted ? 0 : volume * 100}%` }}
-                                                    >
-                                                        <div className="absolute h-3 w-3 translate-x-1/2 rounded-full bg-white"></div>
-                                                    </div>
-                                                    <input
-                                                        type="range"
-                                                        min="0"
-                                                        max="1"
-                                                        step="0.01"
-                                                        value={isMuted ? 0 : volume}
-                                                        onChange={handleVolumeChange}
-                                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                {/* Sélecteur Audio (si plusieurs pistes) */}
-                                {audioTracks.length > 0 && (
-                                    <div className="relative">
-                                        <div className="flex items-center justify-center font-medium whitespace-nowrap relative overflow-hidden transition-all h-10 text-sm rounded-md cursor-pointer text-white bg-opacity-20 hover:bg-opacity-15 backdrop-blur-sm transform-gpu bg-white/5 px-0 py-0">
-                                            <button
-                                                className="w-full h-full px-3 flex items-center gap-1 cursor-pointer"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setShowAudioMenu(!showAudioMenu);
-                                                    setShowQualityMenu(false);
-                                                }}
-                                                title="Pistes Audio"
-                                            >
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-                                                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                                                    <line x1="12" y1="19" x2="12" y2="23"></line>
-                                                    <line x1="8" y1="23" x2="16" y2="23"></line>
-                                                </svg>
-                                                <span className="text-xs font-bold ml-1">
-                                                    {audioTracks[currentAudioTrack]?.lang?.toUpperCase() || `Audio ${currentAudioTrack + 1}`}
-                                                </span>
-                                            </button>
-                                        </div>
-
-                                        {showAudioMenu && (
-                                            <div className="absolute bottom-full right-0 mb-2 w-48 bg-[#1f1f1f] border border-white/10 rounded-lg shadow-xl overflow-hidden z-50 max-h-60 overflow-y-auto">
-                                                {audioTracks.map((track, index) => (
-                                                    <button
-                                                        key={index}
-                                                        className={`w-full flex items-center justify-between px-3 py-2 hover:bg-white/5 transition-colors text-sm text-left ${currentAudioTrack === index ? 'bg-blue-500/10 text-blue-400' : 'text-gray-300'}`}
-                                                        onClick={() => handleAudioTrackChange(index)}
-                                                    >
-                                                        <span>{track.name || track.lang || `Piste ${index + 1}`}</span>
-                                                        {currentAudioTrack === index && <div className="w-2 h-2 rounded-full bg-blue-500"></div>}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-
-                            </div>
-
-                            {/* Contrôles de droite */}
-                            <div className="flex items-center gap-3">
-                                {/* Indicateur de qualité */}
-                                <div className="flex items-center justify-center font-bold px-3 bg-white/5 rounded-md text-xs text-white border border-white/10 shadow-sm backdrop-blur-sm h-10 cursor-pointer">
-                                    {videoQualityLabel}
-                                </div>
-                                {/* Sélecteur de qualité */}
-                                <div className="relative">
-                                    <div className="flex items-center justify-center font-medium whitespace-nowrap relative overflow-hidden transition-all h-10 text-sm rounded-md cursor-pointer text-white bg-opacity-20 hover:bg-opacity-15 backdrop-blur-sm transform-gpu bg-white/5 px-0 py-0">
-                                        <button
-                                            className="w-full h-full px-3 flex items-center gap-1 cursor-pointer"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setShowQualityMenu(!showQualityMenu);
-                                            }}
-                                            title="Qualité vidéo"
-                                        >
-                                            <Settings className="w-5 h-5" />
-                                        </button>
-                                    </div>
-
-                                    {showQualityMenu && (
-                                        <div className="absolute bottom-full right-0 mb-2 w-48 bg-[#1f1f1f] border border-white/10 rounded-lg shadow-xl overflow-hidden z-50 max-h-60 overflow-y-auto">
-                                            <button
-                                                className={`w-full flex items-center justify-between px-3 py-2 hover:bg-white/5 transition-colors text-sm text-left ${currentLevel === -1 ? 'bg-blue-500/10 text-blue-400' : 'text-gray-300'}`}
-                                                onClick={() => handleQualityChange(-1)}
-                                            >
-                                                <span>Auto</span>
-                                                {currentLevel === -1 && <div className="w-2 h-2 rounded-full bg-blue-500"></div>}
-                                            </button>
-                                            {levels.map((level, index) => (
-                                                <button
-                                                    key={index}
-                                                    className={`w-full flex items-center justify-between px-3 py-2 hover:bg-white/5 transition-colors text-sm text-left ${currentLevel === index ? 'bg-blue-500/10 text-blue-400' : 'text-gray-300'}`}
-                                                    onClick={() => handleQualityChange(index)}
-                                                >
-                                                    <span>{level.height}p</span>
-                                                    {currentLevel === index && <div className="w-2 h-2 rounded-full bg-blue-500"></div>}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Fullscreen */}
-                                <div className="flex items-center justify-center font-medium whitespace-nowrap relative overflow-hidden transition-all h-10 text-sm rounded-md cursor-pointer text-white bg-opacity-20 hover:bg-opacity-15 backdrop-blur-sm transform-gpu bg-white/5 px-0 py-0">
-                                    <button className="w-full h-full px-3 cursor-pointer" onClick={(e) => {
-                                        e.stopPropagation();
-                                        toggleFullscreen();
-                                    }}>
-                                        {isFullscreen ? (
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
-                                                <path d="M8 3v3a2 2 0 0 1-2 2H3"></path>
-                                                <path d="M21 8v-3a2 2 0 0 0-2-2h-3"></path>
-                                                <path d="M3 16v3a2 2 0 0 0 2 2h3"></path>
-                                                <path d="M16 21h3a2 2 0 0 0 2-2v-3"></path>
-                                            </svg>
-                                        ) : (
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
-                                                <path d="M8 3H5a2 2 0 0 0-2 2v3"></path>
-                                                <path d="M21 8V5a2 2 0 0 0-2-2h-3"></path>
-                                                <path d="M3 16v3a2 2 0 0 0 2 2h3"></path>
-                                                <path d="M16 21h3a2 2 0 0 0 2-2v-3"></path>
-                                            </svg>
-                                        )}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>

@@ -27,6 +27,7 @@ interface User {
     firstName: string;
     lastName: string;
     email: string;
+    emailVerified: boolean;
     role: 'ADMIN' | 'USER';
     ipAddress?: string;
     city?: string;
@@ -387,27 +388,28 @@ const Users = () => {
                     <table className="w-full text-left border-collapse table-fixed">
                         <thead>
                             <tr className="bg-slate-900/50 text-slate-400 border-b border-slate-700">
-                                <th style={{ width: '19%' }} className="p-3 font-semibold text-xs uppercase tracking-wider">Utilisateur</th>
-                                <th style={{ width: '9%' }} className="p-3 font-semibold text-xs uppercase tracking-wider">Pays</th>
-                                <th style={{ width: '9%' }} className="p-3 font-semibold text-xs uppercase tracking-wider">Ville</th>
+                                <th style={{ width: '18%' }} className="p-3 font-semibold text-xs uppercase tracking-wider">Utilisateur</th>
+                                <th style={{ width: '8%' }} className="p-3 font-semibold text-xs uppercase tracking-wider">Pays</th>
+                                <th style={{ width: '8%' }} className="p-3 font-semibold text-xs uppercase tracking-wider">Ville</th>
                                 <th style={{ width: '11%' }} className="p-3 font-semibold text-xs uppercase tracking-wider">IP</th>
                                 <th style={{ width: '11%' }} className="p-3 font-semibold text-xs uppercase tracking-wider">Appareil</th>
                                 <th style={{ width: '11%' }} className="p-3 font-semibold text-xs uppercase tracking-wider">Activité</th>
-                                <th style={{ width: '10%' }} className="p-3 font-semibold text-xs uppercase tracking-wider">Rôle</th>
-                                <th style={{ width: '10%' }} className="p-3 font-semibold text-xs uppercase tracking-wider">Statut</th>
-                                <th style={{ width: '10%' }} className="p-3 font-semibold text-xs uppercase tracking-wider text-right">Options</th>
+                                <th style={{ width: '9%' }} className="p-3 font-semibold text-xs uppercase tracking-wider">Rôle</th>
+                                <th style={{ width: '8%' }} className="p-3 font-semibold text-xs uppercase tracking-wider">Statut</th>
+                                <th style={{ width: '8%' }} className="p-3 font-semibold text-xs uppercase tracking-wider">Email</th>
+                                <th style={{ width: '8%' }} className="p-3 font-semibold text-xs uppercase tracking-wider text-right">Options</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-700/50 text-xs">
                             {isLoading ? (
                                 <tr>
-                                    <td colSpan={9} className="p-8 text-center text-slate-400 text-sm">
+                                    <td colSpan={10} className="p-8 text-center text-slate-400 text-sm">
                                         Chargement...
                                     </td>
                                 </tr>
                             ) : filteredUsers.length === 0 ? (
                                 <tr>
-                                    <td colSpan={9} className="p-8 text-center text-slate-400 text-sm">
+                                    <td colSpan={10} className="p-8 text-center text-slate-400 text-sm">
                                         Aucun utilisateur trouvé pour ce filtre.
                                     </td>
                                 </tr>
@@ -502,6 +504,25 @@ const Users = () => {
                                                             </svg>
                                                         </div>
                                                         Actif
+                                                    </span>
+                                                )}
+                                            </td>
+
+                                            {/* Email */}
+                                            <td className="p-3">
+                                                {user.emailVerified ? (
+                                                    <span className="text-green-400 flex items-center gap-2 truncate">
+                                                        <div className="h-6 w-6 rounded-full bg-green-500/10 flex items-center justify-center shrink-0">
+                                                            <BadgeCheck className="h-3.5 w-3.5" />
+                                                        </div>
+                                                        Vérifié
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-yellow-500 flex items-center gap-2 truncate">
+                                                        <div className="h-6 w-6 rounded-full bg-yellow-500/10 flex items-center justify-center shrink-0">
+                                                            <Clock className="h-3.5 w-3.5" />
+                                                        </div>
+                                                        Non vérifié
                                                     </span>
                                                 )}
                                             </td>
