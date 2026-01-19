@@ -115,6 +115,17 @@ export const TVPlayer = () => {
                 promise.catch(error => {
                     if (error.name === 'AbortError') {
                         // Ignore abort errors as they happen when switching channels
+                    } else if (error.name === 'NotAllowedError') {
+                        // Autoplay blocked, force try muted regardless of current state
+                        if (videoRef.current) {
+                            console.warn("Autoplay blocked (NotAllowedError). Retrying with muted audio.");
+                            videoRef.current.muted = true;
+                            setIsMuted(true);
+                            videoRef.current.play().catch((e) => {
+                                console.error("Muted autoplay also failed:", e);
+                                setIsPlaying(false);
+                            });
+                        }
                     } else {
                         setIsPlaying(false);
                     }
@@ -456,9 +467,9 @@ export const TVPlayer = () => {
                 onDoubleClick={toggleFullscreen}
             />
 
-            {/* Top Bar (Back Button) */}
+            {/* Top Bar (Back Button & Live Indicator) */}
             <div 
-                className={`absolute top-0 left-0 w-full p-6 flex justify-between items-start transition-opacity duration-300 z-20 ${showControls ? 'opacity-100' : 'opacity-0'}`}
+                className={`absolute top-0 left-0 w-full p-6 flex justify-between items-center transition-opacity duration-300 z-20 ${showControls ? 'opacity-100' : 'opacity-0'}`}
                 onClick={(e) => { e.stopPropagation(); handleScreenClick(); }}
             >
                 <button
@@ -470,6 +481,13 @@ export const TVPlayer = () => {
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
                 </button>
+
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-full pointer-events-none">
+                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                    <span className="text-green-500 font-bold uppercase tracking-wider text-xs">
+                        Live
+                    </span>
+                </div>
             </div>
 
             {/* Loading Spinner */}
@@ -503,16 +521,6 @@ export const TVPlayer = () => {
                     className={`absolute inset-0 flex items-center justify-center gap-12 z-10 transition-opacity duration-300 ${showControls || !isPlaying ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
                     onClick={(e) => { e.stopPropagation(); handleScreenClick(); }}
                 >
-                    {/* Prev Channel (Desktop) */}
-                    {!isMobile && (
-                         <button 
-                            onClick={(e) => { e.stopPropagation(); handlePrevChannel(); }}
-                            className="p-4 rounded-full text-white/50 hover:text-white hover:bg-white/10 transition-all pointer-events-auto"
-                        >
-                            <ChevronLeft className="w-10 h-10" />
-                        </button>
-                    )}
-
                     {/* Play/Pause */}
                     <button 
                         className="w-14 h-14 bg-black/30 rounded-full flex items-center justify-center backdrop-blur-md border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.5)] hover:bg-black/40 hover:scale-105 hover:border-white/40 transition-all duration-300 cursor-pointer pointer-events-auto group/play"
@@ -528,16 +536,6 @@ export const TVPlayer = () => {
                             </svg>
                         )}
                     </button>
-
-                    {/* Next Channel (Desktop) */}
-                    {!isMobile && (
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); handleNextChannel(); }}
-                            className="p-4 rounded-full text-white/50 hover:text-white hover:bg-white/10 transition-all pointer-events-auto"
-                        >
-                            <ChevronRight className="w-10 h-10" />
-                        </button>
-                    )}
                 </div>
             )}
 
@@ -564,9 +562,6 @@ export const TVPlayer = () => {
 
                 {/* Progress Bar (Visual only for Live TV) */}
                 <div className="w-full mb-4 flex items-center gap-4">
-                    <span className="text-red-500 font-bold uppercase tracking-wider animate-pulse text-xs">
-                        Live
-                    </span>
                     <div className="relative flex-1 h-1.5 bg-white/20 rounded-full">
                         <div className="absolute top-0 left-0 h-full w-full bg-gradient-to-r from-blue-600 to-blue-400 rounded-full opacity-80" />
                     </div>
