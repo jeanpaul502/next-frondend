@@ -105,6 +105,9 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
             const hls = new Hls({
                 enableWorker: true,
                 lowLatencyMode: false,
+                maxBufferLength: 30, // Increase buffer length to 30s
+                maxMaxBufferLength: 60, // Max buffer length 60s
+                fragLoadingTimeOut: 20000, // Timeout for fragment loading
             });
             hlsRef.current = hls;
             hls.loadSource(sourceUrl);
@@ -401,10 +404,13 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
             />
 
             {/* Top Bar (Back Button & PiP) */}
-            <div className={`absolute top-0 left-0 w-full p-6 flex justify-between items-start transition-opacity duration-300 z-20 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
+            <div 
+                className={`absolute top-0 left-0 w-full p-6 flex justify-between items-start transition-opacity duration-300 z-20 ${showControls ? 'opacity-100' : 'opacity-0'}`}
+                onClick={(e) => { e.stopPropagation(); handleContainerClick(); }}
+            >
                 <button
                     onClick={(e) => { e.stopPropagation(); handleClose(); }}
-                    className="p-3 bg-black/40 hover:bg-black/60 rounded-full text-white transition-colors backdrop-blur-md group-hover:scale-110"
+                    className="p-3 bg-black/40 hover:bg-black/60 rounded-full text-white transition-colors backdrop-blur-md group-hover:scale-110 pointer-events-auto"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -424,27 +430,27 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
             )}
 
             {/* Center Controls (Skips & Play/Pause) */}
-            {!isBuffering && (showControls || !isPlaying) && (
+            {!isBuffering && (
                 <div 
-                    className="absolute inset-0 flex items-center justify-center gap-12 z-10 pointer-events-none"
+                    className={`absolute inset-0 flex items-center justify-center gap-12 z-10 transition-opacity duration-300 ${showControls || !isPlaying ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+                    onClick={(e) => { e.stopPropagation(); handleContainerClick(); }}
                 >
                     {/* -10s */}
                     {isMobile && (
                         <button 
                             onClick={(e) => { e.stopPropagation(); handleSkip(-10); }}
-                            className="p-4 text-white/80 hover:text-white transition-all pointer-events-auto transform hover:scale-110 drop-shadow-md"
+                            className="p-4 text-white/80 hover:text-white transition-all pointer-events-auto transform hover:scale-110 drop-shadow-md relative"
                         >
                             <svg className="w-12 h-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 15l-6 6m0 0l-6-6m6 6V9a6 6 0 0112 0v3" transform="matrix(-1 0 0 1 24 0)" />
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 3v5h5" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 15l-6 6m0 0l-6-6" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 21V9a9 9 0 019-9" />
                             </svg>
-                            <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] font-bold mt-1">10</span>
+                            <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] font-bold mt-[2px] ml-[-1px]">10</span>
                         </button>
                     )}
 
                     {/* Play/Pause */}
-                    <div 
+                    <button 
                         className="w-14 h-14 bg-black/30 rounded-full flex items-center justify-center backdrop-blur-md border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.5)] hover:bg-black/40 hover:scale-105 hover:border-white/40 transition-all duration-300 cursor-pointer pointer-events-auto group/play"
                         onClick={(e) => { e.stopPropagation(); togglePlay(); }}
                     >
@@ -457,19 +463,19 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
                                 <path d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
                             </svg>
                         )}
-                    </div>
+                    </button>
 
                     {/* +10s */}
                     {isMobile && (
                         <button 
                             onClick={(e) => { e.stopPropagation(); handleSkip(10); }}
-                            className="p-4 text-white/80 hover:text-white transition-all pointer-events-auto transform hover:scale-110 drop-shadow-md"
+                            className="p-4 text-white/80 hover:text-white transition-all pointer-events-auto transform hover:scale-110 drop-shadow-md relative"
                         >
                             <svg className="w-12 h-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M21 3v5h-5" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 15l6 6m0 0l6-6" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 21V9a9 9 0 00-9-9" />
                             </svg>
-                            <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] font-bold mt-1">10</span>
+                            <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] font-bold mt-[2px] ml-[1px]">10</span>
                         </button>
                     )}
                 </div>
