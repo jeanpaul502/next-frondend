@@ -9,11 +9,10 @@ import MoviePlayer from './Components/MoviePlayer';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import { API_BASE_URL } from '../utils/config';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { DonationModal } from './Components/DonationModal';
 
 export default function Dashboard() {
-    const router = useRouter();
     const [selectedMovie, setSelectedMovie] = useState<any>(null);
     const [movies, setMovies] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -137,16 +136,6 @@ export default function Dashboard() {
     }, []);
 
     const handlePlayMovie = (movie: any) => {
-        // Detect mobile device
-        if (typeof window !== 'undefined' && window.innerWidth < 768) {
-            const videoUrl = movie.videoUrl || movie.url;
-            if (videoUrl) {
-                // Navigate to the mobile player route with autoplay
-                router.push(`/watch/movie/${movie.id}?autoplay=true`);
-                return;
-            }
-        }
-
         setPlayingMovie(movie);
         setSelectedMovie(null);
     };
