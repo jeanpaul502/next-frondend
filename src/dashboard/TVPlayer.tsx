@@ -124,10 +124,12 @@ export const TVPlayer = () => {
                             videoRef.current.play().catch((e) => {
                                 console.error("Muted autoplay also failed:", e);
                                 setIsPlaying(false);
+                                setIsLoading(false);
                             });
                         }
                     } else {
                         setIsPlaying(false);
+                        setIsLoading(false);
                     }
                 });
             }
@@ -147,9 +149,13 @@ export const TVPlayer = () => {
                 hls.loadSource(channelUrl);
                 hls.attachMedia(videoRef.current!);
 
+                if (videoRef.current) {
+                    videoRef.current.onplaying = () => setIsLoading(false);
+                    videoRef.current.onwaiting = () => setIsLoading(true);
+                }
+
                 hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
                     if (!hls) return;
-                    setIsLoading(false);
                     setLevels(data.levels);
                     // S'assurer que le niveau est sur Auto au démarrage
                     hls.currentLevel = -1;
@@ -209,8 +215,9 @@ export const TVPlayer = () => {
             } else if (videoRef.current?.canPlayType('application/vnd.apple.mpegurl')) {
                 // Native HLS support (Safari)
                 videoRef.current.src = channelUrl;
+                videoRef.current.onplaying = () => setIsLoading(false);
+                videoRef.current.onwaiting = () => setIsLoading(true);
                 videoRef.current.addEventListener('loadedmetadata', () => {
-                    setIsLoading(false);
                     handlePlayPromise(videoRef.current?.play());
                 });
                 videoRef.current.addEventListener('error', () => {
@@ -417,7 +424,7 @@ export const TVPlayer = () => {
 
     const handleChannelClick = (channel: Channel) => {
         // Naviguer vers la nouvelle chaîne en remplaçant l'URL actuelle
-        router.push(`/watch/tv?url=${encodeURIComponent(channel.url)}&name=${encodeURIComponent(channel.name)}&logo=${encodeURIComponent(channel.logo || '')}&playlistId=${selectedPlaylist?.id}`);
+        router.replace(`/watch/tv?url=${encodeURIComponent(channel.url)}&name=${encodeURIComponent(channel.name)}&logo=${encodeURIComponent(channel.logo || '')}&playlistId=${selectedPlaylist?.id}`);
     };
 
     // Fonction pour changer la qualité
@@ -454,22 +461,21 @@ export const TVPlayer = () => {
             className="fixed inset-0 z-[100] w-full h-full bg-black overflow-hidden font-sans group"
             onMouseMove={handleMouseMove}
             onClick={handleScreenClick}
+            onDoubleClick={toggleFullscreen}
         >
             {/* Video */}
             <video
                 ref={videoRef}
-                className={`w-full h-full object-contain transition-all duration-300 ${showSidebar && !isMobile ? 'pr-80' : ''}`}
+                className={`w-full h-full object-contain transition-all duration-300 pointer-events-none ${showSidebar && !isMobile ? 'pr-80' : ''}`}
                 playsInline
                 autoPlay
                 preload="auto"
                 crossOrigin="anonymous"
-                onClick={(e) => { e.stopPropagation(); handleScreenClick(); }}
-                onDoubleClick={toggleFullscreen}
             />
 
-            {/* Top Bar (Back Button & Live Indicator) */}
+            {/* Top Bar (Back Button) */}
             <div 
-                className={`absolute top-0 left-0 w-full p-6 flex justify-between items-center transition-opacity duration-300 z-20 ${showControls ? 'opacity-100' : 'opacity-0'}`}
+                className={`absolute top-0 left-0 w-full p-6 flex justify-between items-center transition-opacity duration-300 z-20 ${showControls ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
                 onClick={(e) => { e.stopPropagation(); handleScreenClick(); }}
             >
                 <button
@@ -481,13 +487,6 @@ export const TVPlayer = () => {
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
                 </button>
-
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-full pointer-events-none">
-                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                    <span className="text-green-500 font-bold uppercase tracking-wider text-xs">
-                        Live
-                    </span>
-                </div>
             </div>
 
             {/* Loading Spinner */}
@@ -541,23 +540,30 @@ export const TVPlayer = () => {
 
             {/* Bottom Controls */}
             <div
-                className={`absolute bottom-0 left-0 w-full pt-12 pb-6 px-6 transition-opacity duration-300 z-20 ${showControls ? 'opacity-100' : 'opacity-0'} ${showSidebar && !isMobile ? 'pr-80' : ''}`}
+                className={`absolute bottom-0 left-0 w-full pt-12 pb-6 px-6 transition-opacity duration-300 z-20 ${showControls ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'} ${showSidebar && !isMobile ? 'pr-80' : ''}`}
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Channel Logo / Name */}
-                <div className="mb-4 flex items-center">
-                     {channelLogo ? (
+                <div className="mb-4 flex items-center gap-4">
+                     {channelLogo && (
                         <img 
                             src={channelLogo} 
                             alt={channelName || 'Channel'} 
                             className="h-8 md:h-12 w-auto object-contain drop-shadow-md"
                             onError={(e) => {(e.target as HTMLImageElement).style.display = 'none';}}
                         />
-                     ) : (
-                        <div className="text-white/90 font-medium text-lg drop-shadow-md">
-                            {channelName || 'Live TV'}
-                        </div>
                      )}
+                    <div className="text-white/90 font-medium text-lg drop-shadow-md">
+                        {channelName || 'Live TV'}
+                    </div>
+                </div>
+
+                {/* Live Indicator */}
+                <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                    <span className="text-green-500 font-bold uppercase tracking-wider text-xs">
+                        Live
+                    </span>
                 </div>
 
                 {/* Progress Bar (Visual only for Live TV) */}
