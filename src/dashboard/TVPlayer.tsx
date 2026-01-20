@@ -466,7 +466,7 @@ export const TVPlayer = () => {
             {/* Video */}
             <video
                 ref={videoRef}
-                className={`w-full h-full object-contain transition-all duration-300 pointer-events-none ${showSidebar && !isMobile ? 'pr-80' : ''}`}
+                className={`w-full h-full object-contain transition-all duration-300 pointer-events-none ${showSidebar && !isMobile ? 'pr-[22rem]' : ''}`}
                 playsInline
                 autoPlay
                 preload="auto"
@@ -540,30 +540,33 @@ export const TVPlayer = () => {
 
             {/* Bottom Controls */}
             <div
-                className={`absolute bottom-0 left-0 w-full pt-12 pb-6 px-6 transition-opacity duration-300 z-20 ${showControls ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'} ${showSidebar && !isMobile ? 'pr-80' : ''}`}
+                className={`absolute bottom-0 left-0 w-full pt-12 pb-6 px-6 transition-opacity duration-300 z-20 ${showControls ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'} ${showSidebar && !isMobile ? 'pr-[22rem]' : ''}`}
                 onClick={(e) => e.stopPropagation()}
             >
-                {/* Channel Logo / Name */}
-                <div className="mb-4 flex items-center gap-4">
-                     {channelLogo && (
-                        <img 
-                            src={channelLogo} 
-                            alt={channelName || 'Channel'} 
-                            className="h-8 md:h-12 w-auto object-contain drop-shadow-md"
-                            onError={(e) => {(e.target as HTMLImageElement).style.display = 'none';}}
-                        />
-                     )}
-                    <div className="text-white/90 font-medium text-lg drop-shadow-md">
-                        {channelName || 'Live TV'}
+                {/* Channel Info & Live Indicator Row */}
+                <div className="mb-4 flex items-center justify-between">
+                    {/* Left: Channel Logo / Name */}
+                    <div className="flex items-center gap-4">
+                        {channelLogo && (
+                            <img 
+                                src={channelLogo} 
+                                alt={channelName || 'Channel'} 
+                                className="h-8 md:h-12 w-auto object-contain drop-shadow-md"
+                                onError={(e) => {(e.target as HTMLImageElement).style.display = 'none';}}
+                            />
+                        )}
+                        <div className="text-white/90 font-medium text-lg drop-shadow-md">
+                            {channelName || 'Live TV'}
+                        </div>
                     </div>
-                </div>
 
-                {/* Live Indicator */}
-                <div className="flex items-center gap-2 mb-2">
-                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                    <span className="text-green-500 font-bold uppercase tracking-wider text-xs">
-                        Live
-                    </span>
+                    {/* Right: Live Indicator */}
+                    <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                        <span className="text-green-500 font-bold uppercase tracking-wider text-xs">
+                            Live
+                        </span>
+                    </div>
                 </div>
 
                 {/* Progress Bar (Visual only for Live TV) */}
