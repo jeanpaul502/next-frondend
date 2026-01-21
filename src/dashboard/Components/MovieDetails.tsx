@@ -284,12 +284,12 @@ export const MovieDetails = ({ movie, onClose, userCountry = 'France', onPlay, a
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/40 to-transparent" />
 
-                    <div className="absolute bottom-0 left-0 w-full p-4 sm:p-6 md:p-10">
+                    <div className="absolute bottom-0 left-0 w-full px-4 sm:px-6 md:px-10 pt-4 sm:pt-6 md:pt-10 pb-2 sm:pb-4">
                         <motion.div
                             initial={{ y: 20, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             transition={{ delay: 0.2 }}
-                            className="w-full max-w-[160px] sm:max-w-[220px] md:max-w-[280px] mb-10 sm:mb-14 md:mb-20 md:mt-8"
+                            className="w-full max-w-[140px] sm:max-w-[180px] md:max-w-[240px] mb-4 sm:mb-6 md:mb-8 md:mt-auto"
                         >
                             {logoImage ? (
                                 <img
@@ -308,7 +308,7 @@ export const MovieDetails = ({ movie, onClose, userCountry = 'France', onPlay, a
                                 initial={{ y: 20, opacity: 0 }}
                                 animate={{ y: 0, opacity: 1 }}
                                 transition={{ delay: 0.25 }}
-                                className="flex items-center gap-3 mb-6"
+                                className="flex items-center gap-3 mb-4"
                             >
                                 <div className="flex flex-col items-center justify-center w-9 h-9 bg-[#E50914] rounded-[2px] shadow-sm">
                                     <span className="text-[0.55rem] font-black text-white leading-none tracking-tighter">TOP</span>
@@ -319,6 +319,8 @@ export const MovieDetails = ({ movie, onClose, userCountry = 'France', onPlay, a
                                 </span>
                             </motion.div>
                         )}
+
+
 
                         <motion.div
                             initial={{ y: 20, opacity: 0 }}
