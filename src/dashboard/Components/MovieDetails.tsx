@@ -443,7 +443,7 @@ export const MovieDetails = ({ movie, onClose, userCountry = 'France', onPlay, a
                             </div>
                         </div>
                         {/* Tabs - 3 onglets sur mobile */}
-                        <div className="flex items-center gap-3 sm:gap-6 mb-4 pb-2 overflow-x-auto scrollbar-hide">
+                        <div className="flex items-center gap-3 sm:gap-6 mb-4 pb-2 mt-6 sm:mt-0 overflow-x-auto scrollbar-hide">
                             <button
                                 onClick={() => setActiveTab('description')}
                                 className={`text-xs sm:text-sm font-bold pb-2 border-b-2 transition-colors whitespace-nowrap ${activeTab === 'description' ? 'text-white border-white' : 'text-gray-400 border-transparent hover:text-gray-200'}`}
