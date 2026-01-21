@@ -229,15 +229,18 @@ export const Hero = ({ onDetailsClick, userCountry = 'France', onPlay, top10Movi
                             className="absolute inset-0 bg-cover"
                             style={{
                                 backgroundImage: `url('${item.backdropPath || item.posterPath}')`,
-                                backgroundPosition: 'center 50%'
+                                backgroundPosition: 'center 35%'
                             }}
                         />
                     </motion.div>
                 ))}
 
-                {/* Static Gradients - Always visible on top of images */}
-                <div className="absolute inset-0 z-10 bg-gradient-to-t from-gray-900 via-gray-900/40 to-transparent" />
-                <div className="absolute inset-y-0 left-0 z-10 w-full md:w-3/4 bg-gradient-to-r from-gray-900 via-gray-900/60 to-transparent" />
+                {/* Static Gradients - Desktop only */}
+                <div className="hidden md:block absolute inset-0 z-10 bg-gradient-to-t from-gray-900 via-gray-900/40 to-transparent" />
+                <div className="hidden md:block absolute inset-y-0 left-0 z-10 w-full md:w-3/4 bg-gradient-to-r from-gray-900 via-gray-900/60 to-transparent" />
+
+                {/* Mobile gradient - Bottom only for HeroTV section */}
+                <div className="md:hidden absolute bottom-0 left-0 right-0 h-80 z-10 bg-gradient-to-t from-black via-black/70 to-transparent" />
             </div>
 
             {/* Content Container */}

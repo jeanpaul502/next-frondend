@@ -356,7 +356,7 @@ export default function Dashboard() {
                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-6">
 
                         {/* Main Premium Banner (Large) - 3 columns (60%) */}
-                        <div className="lg:col-span-3 relative rounded-2xl sm:rounded-3xl overflow-hidden bg-[#08090e] border border-white/10 shadow-2xl group min-h-[220px] sm:min-h-[260px] md:min-h-[300px]">
+                        <div className="lg:col-span-3 relative rounded-2xl sm:rounded-3xl overflow-hidden bg-[#08090e] border border-white/10 shadow-2xl group min-h-[160px] sm:min-h-[200px] md:min-h-[240px]">
                             {/* Dynamic Background */}
                             <div className="absolute inset-0 overflow-hidden">
                                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-blue-900/10 via-[#08090e] to-[#08090e]" />
@@ -405,7 +405,7 @@ export default function Dashboard() {
                         </div>
 
                         {/* Secondary Banner (Sport Images) - 2 columns (40%) */}
-                        <div className="lg:col-span-2 relative rounded-2xl sm:rounded-3xl overflow-hidden bg-[#08090e] border border-white/10 shadow-2xl group min-h-[220px] sm:min-h-[260px] md:min-h-[300px]">
+                        <div className="lg:col-span-2 relative rounded-2xl sm:rounded-3xl overflow-hidden bg-[#08090e] border border-white/10 shadow-2xl group min-h-[160px] sm:min-h-[200px] md:min-h-[240px]">
                             <AnimatePresence mode='wait'>
                                 <motion.img
                                     key={sportIndex}
