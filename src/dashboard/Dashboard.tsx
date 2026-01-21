@@ -260,9 +260,29 @@ export default function Dashboard() {
         (movie.genres && movie.genres.toLowerCase().includes('top 10'))
     ).slice(0, 10).map(mapMovieToCard);
 
+    // Map of Top 10 Ranks for consistency across all views
+    const top10RankMap = new Map();
+    top10France.forEach((movie, index) => {
+        top10RankMap.set(movie.id, index + 1);
+    });
+
+    const onSelectMovie = (movie: any) => {
+        // Handle movie selection with rank consistency
+        const rank = top10RankMap.get(movie.id);
+        if (rank) {
+            // If movie is in Top 10, enforce its rank and status
+            setSelectedMovie({ ...movie, rank, isTop10: true });
+        } else {
+            setSelectedMovie(movie);
+        }
+    };
+
     // 2. Exclusive Genre Sets (Waterfall)
-    // We track IDs to ensure a movie appears in only ONE genre row (Priority: Family -> Horror -> Fantasy -> Comedy -> Action)
-    const genreUsedIds = new Set<number>();
+    // We track IDs to ensure a movie appears in only ONE genre row (Priority: Top10 -> Family -> Horror -> Fantasy -> Comedy -> Action)
+    const genreUsedIds = new Set<string | number>();
+
+    // Initialize with Top 10 movies to exclude them from other categories
+    top10France.forEach(movie => genreUsedIds.add(movie.id));
 
     const getExclusiveMovies = (filterFn: (m: any) => boolean) => {
         const result = movies.filter(m => {
@@ -414,8 +434,8 @@ export default function Dashboard() {
                 {/* 1. Tendances (High Rating) */}
                 {trendingMovies.length > 0 && (
                     <div className="mb-0">
-                        <h2 className="text-lg font-bold text-white px-4 mb-0">Tendances</h2>
-                        <ContentRow title="Tendances" data={trendingMovies} onMovieSelect={setSelectedMovie} />
+                        <h2 className="text-sm sm:text-lg font-bold text-white px-4 mb-0">Tendances</h2>
+                        <ContentRow title="Tendances" data={trendingMovies} onMovieSelect={onSelectMovie} />
                     </div>
                 )}
 
@@ -427,59 +447,53 @@ export default function Dashboard() {
                                 <span className="text-[0.5rem] font-black text-white leading-none tracking-tighter">TOP</span>
                                 <span className="text-[1.0rem] font-black text-white leading-none -mt-0.5">10</span>
                             </div>
-                            <span className="text-xl font-bold text-white tracking-wide drop-shadow-md">
+                            <span className="text-sm sm:text-xl font-bold text-white tracking-wide drop-shadow-md">
                                 Top 10 des films en {userCountry} aujourd'hui
                             </span>
                         </div>
-                        <ContentRow title={`Top 10 ${userCountry}`} data={top10France} onMovieSelect={setSelectedMovie} showRank={true} />
+                        <ContentRow title={`Top 10 ${userCountry}`} data={top10France} onMovieSelect={onSelectMovie} showRank={true} />
                     </div>
                 )}
 
                 {/* 3. Films d'action */}
                 {actionMovies.length > 0 && (
                     <div className="mb-0">
-                        <h2 className="text-lg font-bold text-white px-4 mb-0">Action</h2>
-                        <ContentRow title="Action" data={actionMovies} onMovieSelect={setSelectedMovie} />
+                        <h2 className="text-sm sm:text-lg font-bold text-white px-4 mb-0">Action</h2>
+                        <ContentRow title="Action" data={actionMovies} onMovieSelect={onSelectMovie} />
                     </div>
                 )}
 
-                {/* 4. Dernière sortie (Ex-Films du moment) */}
-                {moviesMoment.length > 0 && (
-                    <div className="mb-0">
-                        <h2 className="text-lg font-bold text-white px-4 mb-0">Dernière sortie</h2>
-                        <ContentRow title="Dernière sortie" data={moviesMoment} onMovieSelect={setSelectedMovie} />
-                    </div>
-                )}
+
 
                 {/* 5. Films d'horreur */}
                 {horrorMovies.length > 0 && (
                     <div className="mb-0">
-                        <h2 className="text-lg font-bold text-white px-4 mb-0">Horreur</h2>
-                        <ContentRow title="Horreur" data={horrorMovies} onMovieSelect={setSelectedMovie} />
+                        <h2 className="text-sm sm:text-lg font-bold text-white px-4 mb-0">Horreur</h2>
+                        <ContentRow title="Horreur" data={horrorMovies} onMovieSelect={onSelectMovie} />
                     </div>
                 )}
 
                 {/* 6. Animation (Ex-Enfants et familles) */}
                 {familyMovies.length > 0 && (
                     <div className="mb-0">
-                        <h2 className="text-lg font-bold text-white px-4 mb-0">Animation</h2>
-                        <ContentRow title="Animation" data={familyMovies} onMovieSelect={setSelectedMovie} />
+                        <h2 className="text-sm sm:text-lg font-bold text-white px-4 mb-0">Animation</h2>
+                        <ContentRow title="Animation" data={familyMovies} onMovieSelect={onSelectMovie} />
                     </div>
                 )}
 
                 {/* 7. Aventure/Fantastique */}
                 {scifiAdventureMovies.length > 0 && (
                     <div className="mb-0">
-                        <h2 className="text-lg font-bold text-white px-4 mb-0">Fantastique & Aventure</h2>
-                        <ContentRow title="Aventure" data={scifiAdventureMovies} onMovieSelect={setSelectedMovie} />
+                        <h2 className="text-sm sm:text-lg font-bold text-white px-4 mb-0">Fantastique & Aventure</h2>
+                        <ContentRow title="Aventure" data={scifiAdventureMovies} onMovieSelect={onSelectMovie} />
                     </div>
                 )}
 
                 {/* 8. Comédie (Last Position) */}
                 {comedyMovies.length > 0 && (
                     <div className="mb-0">
-                        <h2 className="text-lg font-bold text-white px-4 mb-0">Comédie</h2>
-                        <ContentRow title="Comédie" data={comedyMovies} onMovieSelect={setSelectedMovie} />
+                        <h2 className="text-sm sm:text-lg font-bold text-white px-4 mb-0">Comédie</h2>
+                        <ContentRow title="Comédie" data={comedyMovies} onMovieSelect={onSelectMovie} />
                     </div>
                 )}
 

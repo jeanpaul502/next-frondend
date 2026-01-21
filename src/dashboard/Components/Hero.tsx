@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HeroTV } from './HeroTV';
 import { ExpandableButton } from './ExpandableButton';
-import { ShareModal } from './ShareModal';
 import { API_BASE_URL } from '../../utils/config';
 import { addToMyList, removeFromMyList, isInMyList, MovieItem } from '../../utils/myListUtils';
 
@@ -21,8 +20,6 @@ export const Hero = ({ onDetailsClick, userCountry = 'France', onPlay, top10Movi
     const [isInList, setIsInList] = useState(false);
     const [likedList, setLikedList] = useState<number[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-    const [movieToShare, setMovieToShare] = useState<any>(null);
 
     useEffect(() => {
         const fetchHeroMovies = async () => {
@@ -311,16 +308,7 @@ export const Hero = ({ onDetailsClick, userCountry = 'France', onPlay, top10Movi
                                             <span>Ma liste</span>
                                         </button>
 
-                                        {/* Bouton Partager (Icon Only) */}
-                                        <button
-                                            onClick={() => {
-                                                setMovieToShare(item);
-                                                setIsShareModalOpen(true);
-                                            }}
-                                            className="flex items-center justify-center rounded-lg border border-gray-400/30 bg-white/10 text-white p-3 transition-all active:scale-95 cursor-pointer backdrop-blur-md min-h-[44px] min-w-[44px]"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" /></svg>
-                                        </button>
+
                                     </div>
                                 </motion.div>
                             );
@@ -488,14 +476,7 @@ export const Hero = ({ onDetailsClick, userCountry = 'France', onPlay, top10Movi
                                 activeIconColor={isLiked ? "text-red-500" : undefined}
                             />
 
-                            <ExpandableButton
-                                icon={<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" /></svg>}
-                                label="Partager"
-                                onClick={() => {
-                                    setMovieToShare(heroMovies[currentIndex]);
-                                    setIsShareModalOpen(true);
-                                }}
-                            />
+
 
                             <ExpandableButton
                                 icon={<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11.25 11.25l.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" /></svg>}
@@ -545,12 +526,7 @@ export const Hero = ({ onDetailsClick, userCountry = 'France', onPlay, top10Movi
                 <HeroTV />
             </div>
 
-            {/* Share Modal */}
-            <ShareModal
-                isOpen={isShareModalOpen}
-                onClose={() => setIsShareModalOpen(false)}
-                movie={movieToShare || movie}
-            />
+
         </div>
     );
 };

@@ -80,7 +80,7 @@ export const MovieCard = ({ id, title, image, rating, year, category, duration, 
 
     return (
         <motion.div
-            className="relative h-[220px] sm:h-[260px] md:h-[300px] lg:h-[320px] aspect-[2/3] flex-shrink-0 overflow-hidden rounded-lg sm:rounded-xl bg-gray-900 shadow-lg cursor-pointer group"
+            className="relative h-[180px] w-[120px] sm:w-auto sm:h-[260px] md:h-[300px] lg:h-[320px] aspect-[2/3] flex-shrink-0 overflow-hidden rounded-lg sm:rounded-xl bg-gray-900 shadow-lg cursor-pointer group"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             whileHover={{ scale: 1.05, zIndex: 10 }}
@@ -103,13 +103,13 @@ export const MovieCard = ({ id, title, image, rating, year, category, duration, 
                         <div className="relative">
                             {/* Shadow/3D Depth Layer */}
                             <span
-                                className="absolute top-1 left-1 text-[7rem] sm:text-[8rem] font-black tracking-tighter text-black/50 select-none leading-none"
+                                className="absolute top-1 left-1 text-[5rem] sm:text-[8rem] font-black tracking-tighter text-black/50 select-none leading-none"
                             >
                                 {rank}
                             </span>
                             {/* Main Number Layer */}
                             <span
-                                className="relative block text-[7rem] sm:text-[8rem] font-black tracking-tighter select-none leading-none"
+                                className="relative block text-[5rem] sm:text-[8rem] font-black tracking-tighter select-none leading-none"
                                 style={{
                                     color: 'rgba(50, 50, 50, 0.4)', // Semi-transparent gray fill
                                     WebkitTextStroke: '2px white',   // White border

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
-import { ShareModal } from './ShareModal';
+import { useRouter } from 'next/navigation';
 import { ExpandableButton } from './ExpandableButton';
 import { API_BASE_URL } from '../../utils/config';
 import { addToMyList, removeFromMyList, isInMyList } from '../../utils/myListUtils';
@@ -18,6 +18,7 @@ interface MovieDetailsProps {
 }
 
 export const MovieDetails = ({ movie, onClose, userCountry = 'France', onPlay, allMovies = [] }: MovieDetailsProps) => {
+    const router = useRouter();
     const [isLiked, setIsLiked] = useState(false);
     const [isInList, setIsInList] = useState(false);
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
@@ -199,8 +200,8 @@ export const MovieDetails = ({ movie, onClose, userCountry = 'France', onPlay, a
     // Modal States
     const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
     const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
-    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
     const [requestLoading, setRequestLoading] = useState(false);
+
     const [notificationPrefs, setNotificationPrefs] = useState({
         email: true,
         whatsapp: false,
@@ -364,16 +365,7 @@ export const MovieDetails = ({ movie, onClose, userCountry = 'France', onPlay, a
                                 </button>
                             )}
 
-                            {/* Bouton Partager */}
-                            {isAvailable && (
-                                <button
-                                    onClick={() => setIsShareModalOpen(true)}
-                                    className="flex items-center justify-center gap-2 rounded-lg border border-gray-400/30 bg-white/10 text-white px-5 sm:px-6 py-2.5 sm:py-3 text-sm font-semibold transition-all hover:bg-white/20 active:scale-95 cursor-pointer backdrop-blur-md min-h-[44px]"
-                                >
-                                    <span className="hidden sm:inline">Partager</span>
-                                    <span className="sm:hidden"><Icon icon="solar:share-bold" width={20} /></span>
-                                </button>
-                            )}
+
 
                             {/* Boutons secondaires desktop uniquement (Just Like/Heart left) */}
                             {isAvailable && (
@@ -604,7 +596,7 @@ export const MovieDetails = ({ movie, onClose, userCountry = 'France', onPlay, a
 
                             {/* Header */}
                             <div className="p-4 md:p-6 border-b border-white/10 bg-white/[0.02] flex items-center justify-between relative z-10">
-                                <h3 className="text-lg md:text-xl font-bold text-white flex items-center gap-2.5">
+                                <h3 className="text-base md:text-lg font-bold text-white flex items-center gap-2.5">
                                     <div className="p-2 bg-blue-500/10 rounded-lg text-blue-500">
                                         <Icon icon="solar:rocket-2-bold-duotone" width={24} />
                                     </div>
@@ -619,61 +611,76 @@ export const MovieDetails = ({ movie, onClose, userCountry = 'France', onPlay, a
                             </div>
 
                             <div className="p-4 md:p-8 relative z-10">
-                                <p className="text-gray-400 text-sm mb-6 md:mb-8 leading-relaxed">
+                                <p className="text-gray-400 text-xs mb-4 md:mb-6 leading-relaxed">
                                     Comment souhaitez-vous être notifié une fois que votre demande pour <span className="text-white font-bold">"{title}"</span> aura été approuvée ?
                                 </p>
 
-                                <div className="grid grid-cols-3 gap-2 md:gap-4">
+                                <div className="flex items-center justify-between gap-2 w-full">
                                     <button
-                                        onClick={() => setNotificationPrefs(p => ({ ...p, email: !p.email }))}
-                                        className={`relative flex flex-col items-center gap-3 p-3 md:p-4 rounded-xl border transition-all cursor-pointer group ${notificationPrefs.email
-                                            ? 'bg-blue-600/10 border-blue-500 text-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.1)]'
+                                        onClick={() => setNotificationPrefs({ email: true, whatsapp: false, telegram: false })}
+                                        className={`relative flex-1 flex items-center justify-center gap-1.5 px-2 h-14 rounded-lg border transition-all cursor-pointer group ${notificationPrefs.email
+                                            ? 'border-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.1)]'
                                             : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 text-gray-400 hover:text-white'}`}
                                     >
                                         {notificationPrefs.email && (
-                                            <div className="absolute top-2 right-2 text-blue-500">
-                                                <Icon icon="solar:check-circle-bold" width={16} />
+                                            <div className="absolute -top-2 -right-2 bg-[#0A0A0A] border border-blue-500 rounded-full p-0.5 text-blue-500">
+                                                <Icon icon="solar:check-circle-bold" width={14} />
                                             </div>
                                         )}
-                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${notificationPrefs.email ? 'bg-blue-500 text-white' : 'bg-white/5 border border-white/10'}`}>
-                                            <Icon icon="solar:letter-bold" width={20} />
-                                        </div>
-                                        <span className="text-sm font-bold">Email</span>
+                                        <Icon icon="solar:letter-bold" width={20} className="text-gray-400 group-hover:text-white" />
+                                        <span className="text-xs font-bold text-gray-400 group-hover:text-white">Email</span>
                                     </button>
 
                                     <button
-                                        onClick={() => setNotificationPrefs(p => ({ ...p, whatsapp: !p.whatsapp }))}
-                                        className={`relative flex flex-col items-center gap-3 p-3 md:p-4 rounded-xl border transition-all cursor-pointer group ${notificationPrefs.whatsapp
-                                            ? 'bg-green-600/10 border-green-500 text-green-500 shadow-[0_0_20px_rgba(34,197,94,0.1)]'
+                                        onClick={() => setNotificationPrefs({ email: false, whatsapp: true, telegram: false })}
+                                        className={`relative flex-1 flex items-center justify-center gap-1.5 px-2 h-14 rounded-lg border transition-all cursor-pointer group ${notificationPrefs.whatsapp
+                                            ? 'border-green-500 shadow-[0_0_20px_rgba(34,197,94,0.1)]'
                                             : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 text-gray-400 hover:text-white'}`}
                                     >
                                         {notificationPrefs.whatsapp && (
-                                            <div className="absolute top-2 right-2 text-green-500">
-                                                <Icon icon="solar:check-circle-bold" width={16} />
+                                            <div className="absolute -top-2 -right-2 bg-[#0A0A0A] border border-green-500 rounded-full p-0.5 text-green-500">
+                                                <Icon icon="solar:check-circle-bold" width={14} />
                                             </div>
                                         )}
-                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${notificationPrefs.whatsapp ? 'bg-green-500 text-white' : 'bg-white/5 border border-white/10'}`}>
-                                            <Icon icon="logos:whatsapp-icon" width={20} />
-                                        </div>
-                                        <span className="text-sm font-bold">WhatsApp</span>
+                                        <Icon icon="logos:whatsapp-icon" width={20} />
+                                        <span className="text-xs font-bold text-gray-400 group-hover:text-white">WhatsApp</span>
                                     </button>
 
                                     <button
-                                        onClick={() => setNotificationPrefs(p => ({ ...p, telegram: !p.telegram }))}
-                                        className={`relative flex flex-col items-center gap-3 p-3 md:p-4 rounded-xl border transition-all cursor-pointer group ${notificationPrefs.telegram
-                                            ? 'bg-sky-600/10 border-sky-500 text-sky-500 shadow-[0_0_20px_rgba(14,165,233,0.1)]'
+                                        onClick={() => setNotificationPrefs({ email: false, whatsapp: false, telegram: true })}
+                                        className={`relative flex-1 flex items-center justify-center gap-1.5 px-2 h-14 rounded-lg border transition-all cursor-pointer group ${notificationPrefs.telegram
+                                            ? 'border-sky-500 shadow-[0_0_20px_rgba(14,165,233,0.1)]'
                                             : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 text-gray-400 hover:text-white'}`}
                                     >
                                         {notificationPrefs.telegram && (
-                                            <div className="absolute top-2 right-2 text-sky-500">
-                                                <Icon icon="solar:check-circle-bold" width={16} />
+                                            <div className="absolute -top-2 -right-2 bg-[#0A0A0A] border border-sky-500 rounded-full p-0.5 text-sky-500">
+                                                <Icon icon="solar:check-circle-bold" width={14} />
                                             </div>
                                         )}
-                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${notificationPrefs.telegram ? 'bg-sky-500 text-white' : 'bg-white/5 border border-white/10'}`}>
-                                            <Icon icon="logos:telegram" width={20} />
-                                        </div>
-                                        <span className="text-sm font-bold">Telegram</span>
+                                        <Icon icon="logos:telegram" width={20} />
+                                        <span className="text-xs font-bold text-gray-400 group-hover:text-white">Telegram</span>
                                     </button>
+                                </div>
+
+                                {/* Warning & Settings Link */}
+                                <div className="mt-6 p-4 bg-yellow-500/5 border border-yellow-500/10 rounded-xl flex items-start gap-3">
+                                    <Icon icon="solar:info-circle-bold" className="text-yellow-500/80 min-w-[18px] mt-0.5" width={18} />
+                                    <div className="flex-1">
+                                        <p className="text-gray-400 text-xs leading-relaxed">
+                                            Par défaut, les notifications sont envoyées par <strong>Email</strong>. Pour recevoir les notifications via <strong className="text-sky-400">Telegram</strong> ou <strong className="text-green-400">WhatsApp</strong>, assurez-vous d'avoir configuré vos identifiants dans les paramètres.
+                                        </p>
+                                        <button
+                                            onClick={() => {
+                                                setIsRequestModalOpen(false);
+                                                router.push('/dashboard/settings');
+                                            }}
+                                            className="mt-2 text-xs font-bold text-white hover:text-blue-400 transition-colors flex items-center gap-1.5 group/link cursor-pointer"
+                                        >
+                                            <Icon icon="solar:settings-bold" width={14} />
+                                            Configurer mes paramètres
+                                            <Icon icon="solar:arrow-right-linear" width={12} className="group-hover/link:translate-x-1 transition-transform" />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
@@ -702,16 +709,7 @@ export const MovieDetails = ({ movie, onClose, userCountry = 'France', onPlay, a
                 )
             }
 
-            {/* Share Modal */}
-            {
-                mounted && isShareModalOpen && (
-                    <ShareModal
-                        isOpen={isShareModalOpen}
-                        onClose={() => setIsShareModalOpen(false)}
-                        movie={movie}
-                    />
-                )
-            }
+
 
             {/* Success Modal */}
             {

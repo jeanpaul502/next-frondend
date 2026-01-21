@@ -7,7 +7,7 @@ import { Icon } from '@iconify/react';
 interface ContentRowProps {
     title: string;
     data: Array<{
-        id: number;
+        id: string | number;
         title: string;
         image: string;
         rating: number;

@@ -277,11 +277,22 @@ export const Navbar = ({ onSearch }: { onSearch?: (query: string) => void }) => 
         ? `${userData.firstName} ${userData.lastName}`
         : userData?.email || 'Utilisateur';
 
+    const navItems = [
+        { label: "Home", icon: "lucide:home" },
+        { label: "Films", icon: "lucide:clapperboard" },
+        { label: "Séries", icon: "lucide:tv" },
+        { label: "Chaines TV", icon: "lucide:radio-tower" },
+        { label: "Ma Liste", icon: "lucide:list-plus" },
+    ];
+
     return (
         <nav className="fixed top-0 z-50 w-full bg-black/90 backdrop-blur-lg border-b border-white/10 shadow-lg">
             <div className="flex items-center justify-between px-4 py-4 md:px-16 lg:px-24 relative">
                 {/* Left: Logo + App Name */}
-                <div className="flex items-center gap-3 cursor-pointer">
+                <div 
+                    className="flex items-center gap-3 cursor-pointer"
+                    onClick={() => router.push('/dashboard')}
+                >
                     <div className="h-9 w-9 rounded-xl bg-blue-600 flex items-center justify-center">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M12 2L20.5 6.5V17.5L12 22L3.5 17.5V6.5L12 2Z" fill="white" fillOpacity="0.9" />
@@ -293,25 +304,26 @@ export const Navbar = ({ onSearch }: { onSearch?: (query: string) => void }) => 
 
                 {/* Center: Navigation Menu */}
                 <ul className="hidden md:flex items-center gap-6 lg:gap-8 text-sm font-bold text-gray-300 absolute left-1/2 -translate-x-1/2">
-                    {["Home", "Films", "Séries", "Chaines TV", "Ma Liste"].map((item) => {
-                        const isDisabled = item === 'Séries';
+                    {navItems.map((item) => {
+                        const isDisabled = item.label === 'Séries';
                         return (
                             <li
-                                key={item}
-                                onClick={() => !isDisabled && handleNavigation(item)}
-                                className={`relative transition-colors flex items-center justify-center group/navitem
+                                key={item.label}
+                                onClick={() => !isDisabled && handleNavigation(item.label)}
+                                className={`relative transition-colors flex items-center gap-2 justify-center group/navitem
                                     ${isDisabled ? "cursor-not-allowed opacity-40" : "cursor-pointer"}
-                                    ${activeTab === item ? "text-white" : isDisabled ? "hover:text-gray-500" : "hover:text-white"}
+                                    ${activeTab === item.label ? "text-white" : isDisabled ? "hover:text-gray-500" : "hover:text-white"}
                                 `}
                             >
-                                {item}
+                                <Icon icon={item.icon} width="18" height="18" />
+                                <span>{item.label}</span>
                                 {isDisabled && (
                                     <div className="absolute top-full mt-4 left-1/2 -translate-x-1/2 opacity-0 group-hover/navitem:opacity-100 transition-all duration-200 bg-red-600/90 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg whitespace-nowrap z-50 pointer-events-none transform -translate-y-2 group-hover/navitem:translate-y-0">
                                         <div className="absolute -top-[4px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-b-[4px] border-b-red-600/90"></div>
                                         Non disponible
                                     </div>
                                 )}
-                                {activeTab === item && !isDisabled && (
+                                {activeTab === item.label && !isDisabled && (
                                     <motion.div
                                         layoutId="activeTab"
                                         layout
@@ -617,10 +629,13 @@ export const Navbar = ({ onSearch }: { onSearch?: (query: string) => void }) => 
                         exit={{ opacity: 0, height: 0 }}
                         className="md:hidden bg-black/95 backdrop-blur-xl border-b border-white/10 max-h-[85vh] overflow-y-auto"
                     >
-                        <ul className="flex flex-col p-4 space-y-4 text-gray-300 font-medium">
+                        <ul className="flex flex-col p-2 space-y-1 text-gray-300 font-medium text-sm">
                             {/* User Profile in Mobile Menu */}
-                            <li className="flex items-center gap-3 pb-4 border-b border-white/10 mb-2" onClick={() => { setIsMobileMenuOpen(false); router.push('/dashboard/settings'); }}>
-                                <div className="h-10 w-10 overflow-hidden rounded-full border-2 border-blue-500 bg-gray-800">
+                            <li 
+                                className="flex items-center gap-3 p-2 rounded-lg bg-white/5 border border-white/5 mb-2 cursor-pointer active:scale-95 transition-transform" 
+                                onClick={() => { setIsMobileMenuOpen(false); router.push('/dashboard/settings'); }}
+                            >
+                                <div className="h-8 w-8 overflow-hidden rounded-full border border-white/20 bg-gray-800 shadow-sm">
                                     {userData?.avatar ? (
                                         <img
                                             src={userData.avatar.startsWith('http') ? userData.avatar : `${API_BASE_URL}${userData.avatar.startsWith('/') ? '' : '/'}${userData.avatar}`}
@@ -628,52 +643,96 @@ export const Navbar = ({ onSearch }: { onSearch?: (query: string) => void }) => 
                                             alt="User"
                                         />
                                     ) : (
-                                        <div className="w-full h-full flex items-center justify-center bg-blue-600 text-white font-bold">
+                                        <div className="w-full h-full flex items-center justify-center bg-blue-600 text-white font-bold text-xs">
                                             {userData?.firstName?.[0] || 'U'}
                                         </div>
                                     )}
                                 </div>
                                 <div className="flex flex-col">
-                                    <span className="text-white font-bold">{displayName}</span>
-                                    <span className="text-xs text-blue-400">Gérer le compte</span>
+                                    <span className="text-white font-bold text-xs">{displayName}</span>
+                                    <span className="text-[10px] text-blue-400 font-medium">Gérer le compte</span>
                                 </div>
                             </li>
-                            {["Home", "Films", "Séries", "Chaines TV", "Ma Liste"].map((item) => {
-                                const isDisabled = item === 'Séries';
+
+                            {navItems.map((item) => {
+                                const isDisabled = item.label === 'Séries';
+                                const isActive = activeTab === item.label;
                                 return (
                                     <li
-                                        key={item}
+                                        key={item.label}
                                         onClick={() => {
                                             if (!isDisabled) {
-                                                handleNavigation(item);
+                                                handleNavigation(item.label);
                                                 setIsMobileMenuOpen(false);
                                             }
                                         }}
-                                        className={`transition-colors flex justify-between items-center group/mobileitem
-                                            ${isDisabled ? "cursor-not-allowed opacity-40" : "cursor-pointer"}
-                                            ${activeTab === item ? "text-blue-500 font-bold" : isDisabled ? "text-gray-600" : "hover:text-white"}
+                                        className={`
+                                            relative overflow-hidden transition-all duration-200 flex justify-between items-center group/mobileitem py-2 px-3 rounded-lg border
+                                            ${isDisabled 
+                                                ? "cursor-not-allowed opacity-50 bg-transparent border-transparent" 
+                                                : "cursor-pointer active:scale-95"
+                                            }
+                                            ${isActive
+                                                ? "bg-blue-500/10 border-blue-500/20 text-blue-400"
+                                                : isDisabled 
+                                                    ? "text-gray-600" 
+                                                    : "bg-transparent border-transparent hover:bg-white/5 text-gray-400 hover:text-white"
+                                            }
                                         `}
                                     >
-                                        <span>{item}</span>
+                                        <div className="flex items-center gap-3 z-10">
+                                            <div className={`
+                                                p-1.5 rounded-md transition-colors
+                                                ${isActive ? "bg-blue-500/20 text-blue-400" : "bg-white/5 group-hover/mobileitem:bg-white/10 text-gray-400 group-hover/mobileitem:text-white"}
+                                            `}>
+                                                <Icon icon={item.icon} width="16" height="16" />
+                                            </div>
+                                            <span className={`text-sm ${isActive ? "font-bold" : "font-medium"}`}>{item.label}</span>
+                                        </div>
+                                        
+                                        {isActive && (
+                                            <div className="absolute left-0 top-1/2 -translate-y-1/2 h-8 w-1 bg-blue-500 rounded-r-full shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
+                                        )}
+
                                         {isDisabled && (
-                                            <span className="ml-auto text-[10px] bg-red-600/20 text-red-500 px-2 py-0.5 rounded border border-red-600/30">
-                                                Non disponible
+                                            <span className="ml-auto text-[10px] bg-white/5 text-gray-500 px-1.5 py-0.5 rounded border border-white/5">
+                                                Bientôt
                                             </span>
                                         )}
                                     </li>
                                 );
                             })}
-                            <li className="h-px bg-white/10 w-full my-2"></li>
+                            
+                            <li className="h-px bg-white/5 w-full my-1"></li>
+
+                            {/* Admin Link for Mobile - Bottom Position */}
+                            {userData?.role === 'ADMIN' && (
+                                <li
+                                    onClick={() => {
+                                        setIsMobileMenuOpen(false);
+                                        router.push('/admin/dashboard');
+                                    }}
+                                    className="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-red-500/10 text-gray-400 hover:text-red-400 transition-all cursor-pointer active:scale-95 group"
+                                >
+                                    <div className="p-1.5 rounded-md bg-white/5 group-hover:bg-red-500/10 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="M12 8v4" /><path d="M12 16h.01" /></g></svg>
+                                    </div>
+                                    <span className="font-medium text-sm">Administration</span>
+                                </li>
+                            )}
+
                             <li
                                 onClick={handleLogout}
-                                className="flex items-center gap-3 py-3 px-2 text-red-500 hover:bg-white/5 rounded-lg cursor-pointer"
+                                className="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-all cursor-pointer active:scale-95 group"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                                    <polyline points="16 17 21 12 16 7"></polyline>
-                                    <line x1="21" y1="12" x2="9" y2="12"></line>
-                                </svg>
-                                <span>Déconnexion</span>
+                                <div className="p-1.5 rounded-md bg-white/5 group-hover:bg-white/10 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                        <polyline points="16 17 21 12 16 7"></polyline>
+                                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                                    </svg>
+                                </div>
+                                <span className="font-medium text-sm">Déconnexion</span>
                             </li>
                         </ul>
                     </motion.div>
