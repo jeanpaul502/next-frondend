@@ -136,7 +136,7 @@ export const MovieCard = ({ id, title, image, rating, year, category, duration, 
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: isHovered ? 1 : 0, y: isHovered ? 0 : 20 }}
                         transition={{ duration: 0.3, delay: 0.1 }}
-                        className="flex items-center gap-2 scale-90"
+                        className="flex items-center gap-2 scale-75"
                     >
                         {/* Details Button */}
                         <ExpandableButton

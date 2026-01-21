@@ -52,7 +52,7 @@ export const MovieGridCard = ({ id, title, image, rating, year, category, durati
     const handleListClick = async (e?: React.MouseEvent) => {
         e?.stopPropagation();
         if (!id) return;
-        
+
         if (isInList) {
             const success = await removeFromMyList(id);
             if (success) setIsInList(false);
@@ -82,7 +82,7 @@ export const MovieGridCard = ({ id, title, image, rating, year, category, durati
             className="relative w-full aspect-[2/3] flex-shrink-0 overflow-hidden rounded-xl bg-gray-900 shadow-lg cursor-pointer group"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            whileHover={{ scale: 1.02 }}
+            whileHover={{ scale: 1.05, zIndex: 10 }}
             transition={{ duration: 0.3 }}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
@@ -105,12 +105,12 @@ export const MovieGridCard = ({ id, title, image, rating, year, category, durati
                 />
 
                 {/* Buttons Overlay (Bottom Center) */}
-                <div className="absolute inset-x-0 bottom-6 flex items-center justify-center">
+                <div className="hidden sm:flex absolute inset-x-0 bottom-6 items-center justify-center">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: isHovered ? 1 : 0, y: isHovered ? 0 : 20 }}
                         transition={{ duration: 0.3, delay: 0.1 }}
-                        className="flex items-center gap-2 scale-90"
+                        className="flex items-center gap-2 scale-75"
                     >
                         {/* Details Button */}
                         <ExpandableButton

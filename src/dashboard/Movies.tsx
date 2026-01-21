@@ -129,7 +129,7 @@ export const Movies = () => {
         <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black bg-fixed text-white pb-20">
             <Navbar onSearch={setSearchQuery} />
 
-            <div className="pt-24 px-4 md:px-16 lg:px-24 pb-20">
+            <div className="pt-24 px-4 sm:px-8 pb-20">
                 {/* Header Section */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-8 border-b border-white/10 pb-6">
                     <div>
@@ -148,7 +148,7 @@ export const Movies = () => {
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
                     </div>
                 ) : filteredMovies.length > 0 ? (
-                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-2 sm:gap-4 md:gap-6">
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-2 sm:gap-4 md:gap-6">
                         {filteredMovies.map((movie) => (
                             <MovieGridCard
                                 key={movie.id}
