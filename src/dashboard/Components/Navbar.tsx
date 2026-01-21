@@ -289,7 +289,7 @@ export const Navbar = ({ onSearch }: { onSearch?: (query: string) => void }) => 
         <nav className="fixed top-0 z-50 w-full bg-black/90 backdrop-blur-lg border-b border-white/10 shadow-lg">
             <div className="flex items-center justify-between px-4 py-4 md:px-16 lg:px-24 relative">
                 {/* Left: Logo + App Name */}
-                <div 
+                <div
                     className="flex items-center gap-3 cursor-pointer"
                     onClick={() => router.push('/dashboard')}
                 >
@@ -437,7 +437,7 @@ export const Navbar = ({ onSearch }: { onSearch?: (query: string) => void }) => 
                             onClick={() => setIsSearchOpen(!isSearchOpen)}
                             className={`cursor-pointer hover:text-blue-400 transition-colors focus:outline-none ${isSearchOpen ? 'text-blue-500' : ''}`}
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 md:w-6 md:h-6" viewBox="0 0 24 24">
                                 <g fill="none" stroke="currentColor" strokeWidth="1.5">
                                     <circle cx="11.5" cy="11.5" r="9.5" />
                                     <path strokeLinecap="round" d="M18.5 18.5L22 22" />
@@ -449,10 +449,10 @@ export const Navbar = ({ onSearch }: { onSearch?: (query: string) => void }) => 
                     {/* Notification Icon with Badge */}
                     <div
                         ref={notificationButtonRef}
-                        className="hidden md:block relative cursor-pointer group"
+                        className="block relative cursor-pointer group"
                         onClick={() => setIsNotificationOpen(!isNotificationOpen)}
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" className={`transition-colors ${isNotificationOpen ? 'text-blue-500' : 'hover:text-blue-400'}`}>
+                        <svg xmlns="http://www.w3.org/2000/svg" className={`w-5 h-5 md:w-6 md:h-6 transition-colors ${isNotificationOpen ? 'text-blue-500' : 'hover:text-blue-400'}`} viewBox="0 0 24 24">
                             <g fill="none" stroke="currentColor" strokeWidth="1.5">
                                 <path d="M18.75 9.71v-.705C18.75 5.136 15.726 2 12 2S5.25 5.136 5.25 9.005v.705a4.4 4.4 0 0 1-.692 2.375L3.45 13.81c-1.011 1.575-.239 3.716 1.52 4.214a25.8 25.8 0 0 0 14.06 0c1.759-.498 2.531-2.639 1.52-4.213l-1.108-1.725a4.4 4.4 0 0 1-.693-2.375Z" />
                                 <path strokeLinecap="round" d="M7.5 19c.655 1.748 2.422 3 4.5 3s3.845-1.252 4.5-3" />
@@ -631,8 +631,8 @@ export const Navbar = ({ onSearch }: { onSearch?: (query: string) => void }) => 
                     >
                         <ul className="flex flex-col p-2 space-y-1 text-gray-300 font-medium text-sm">
                             {/* User Profile in Mobile Menu */}
-                            <li 
-                                className="flex items-center gap-3 p-2 rounded-lg bg-white/5 border border-white/5 mb-2 cursor-pointer active:scale-95 transition-transform" 
+                            <li
+                                className="flex items-center gap-3 p-2 rounded-lg bg-white/5 border border-white/5 mb-2 cursor-pointer active:scale-95 transition-transform"
                                 onClick={() => { setIsMobileMenuOpen(false); router.push('/dashboard/settings'); }}
                             >
                                 <div className="h-8 w-8 overflow-hidden rounded-full border border-white/20 bg-gray-800 shadow-sm">
@@ -668,14 +668,14 @@ export const Navbar = ({ onSearch }: { onSearch?: (query: string) => void }) => 
                                         }}
                                         className={`
                                             relative overflow-hidden transition-all duration-200 flex justify-between items-center group/mobileitem py-2 px-3 rounded-lg border
-                                            ${isDisabled 
-                                                ? "cursor-not-allowed opacity-50 bg-transparent border-transparent" 
+                                            ${isDisabled
+                                                ? "cursor-not-allowed opacity-50 bg-transparent border-transparent"
                                                 : "cursor-pointer active:scale-95"
                                             }
                                             ${isActive
                                                 ? "bg-blue-500/10 border-blue-500/20 text-blue-400"
-                                                : isDisabled 
-                                                    ? "text-gray-600" 
+                                                : isDisabled
+                                                    ? "text-gray-600"
                                                     : "bg-transparent border-transparent hover:bg-white/5 text-gray-400 hover:text-white"
                                             }
                                         `}
@@ -689,7 +689,7 @@ export const Navbar = ({ onSearch }: { onSearch?: (query: string) => void }) => 
                                             </div>
                                             <span className={`text-sm ${isActive ? "font-bold" : "font-medium"}`}>{item.label}</span>
                                         </div>
-                                        
+
                                         {isActive && (
                                             <div className="absolute left-0 top-1/2 -translate-y-1/2 h-8 w-1 bg-blue-500 rounded-r-full shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
                                         )}
@@ -702,7 +702,7 @@ export const Navbar = ({ onSearch }: { onSearch?: (query: string) => void }) => 
                                     </li>
                                 );
                             })}
-                            
+
                             <li className="h-px bg-white/5 w-full my-1"></li>
 
                             {/* Admin Link for Mobile - Bottom Position */}

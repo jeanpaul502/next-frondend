@@ -493,7 +493,7 @@ export const Hero = ({ onDetailsClick, userCountry = 'France', onPlay, top10Movi
 
             {/* Carousel Indicators - Repositioned Above HeroTV */}
             {heroMovies.length > 1 && (
-                <div className="absolute bottom-28 sm:bottom-32 md:bottom-36 left-1/2 -translate-x-1/2 flex gap-1.5 sm:gap-2 z-30">
+                <div className="absolute bottom-24 sm:bottom-32 md:bottom-36 left-1/2 -translate-x-1/2 flex gap-1.5 sm:gap-2 z-30">
                     {heroMovies.map((_, idx) => (
                         <button
                             key={idx}
