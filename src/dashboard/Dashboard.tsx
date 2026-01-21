@@ -234,6 +234,104 @@ export default function Dashboard() {
         handleDeepLink();
     }, [movieIdParam, tmdbIdParam, movies]);
 
+    // Preload sport images to prevent flickering
+    useEffect(() => {
+        sportImages.forEach((src) => {
+            const img = new Image();
+            img.src = src;
+        });
+    }, []);
+
+    // --- Filtering Logic with Mutual Exclusivity (Memoized) ---
+    const {
+        trendingMovies,
+        top10France,
+        actionMovies,
+        horrorMovies,
+        familyMovies,
+        scifiAdventureMovies,
+        comedyMovies,
+        onSelectMovie
+    } = React.useMemo(() => {
+        if (!movies.length) return {
+            trendingMovies: [], top10France: [], actionMovies: [],
+            horrorMovies: [], familyMovies: [], scifiAdventureMovies: [], comedyMovies: [],
+            onSelectMovie: (m: any) => setSelectedMovie(m)
+        };
+
+        const mapMovieToCardInternal = (movie: any) => ({
+            ...movie,
+            id: movie.id,
+            title: movie.title,
+            image: movie.posterPath || movie.image,
+            rating: movie.voteAverage,
+            year: movie.releaseDate ? new Date(movie.releaseDate).getFullYear() : (movie.year || 2024),
+            category: movie.genres || 'Inconnu',
+            duration: movie.duration
+        });
+
+        const trendingMovies = [...movies]
+            .sort((a, b) => (b.voteAverage || 0) - (a.voteAverage || 0))
+            .slice(0, 10)
+            .map(mapMovieToCardInternal);
+
+        const top10France = movies.filter(movie =>
+            movie.isTop10 ||
+            (movie.genres && movie.genres.toLowerCase().includes('top 10'))
+        ).slice(0, 10).map(mapMovieToCardInternal);
+
+        // Map of Top 10 Ranks for consistency across all views
+        const top10RankMap = new Map();
+        top10France.forEach((movie, index) => {
+            top10RankMap.set(movie.id, index + 1);
+        });
+
+        const onSelectMovie = (movie: any) => {
+            const rank = top10RankMap.get(movie.id);
+            if (rank) {
+                setSelectedMovie({ ...movie, rank, isTop10: true });
+            } else {
+                setSelectedMovie(movie);
+            }
+        };
+
+        // 2. Exclusive Genre Sets (Waterfall)
+        const genreUsedIds = new Set<string | number>();
+        top10France.forEach(movie => genreUsedIds.add(movie.id));
+
+        const getExclusiveMovies = (filterFn: (m: any) => boolean) => {
+            const result = movies.filter(m => {
+                if (genreUsedIds.has(m.id)) return false;
+                if (filterFn(m)) return true;
+                return false;
+            });
+            result.forEach(m => genreUsedIds.add(m.id));
+            return result.slice(0, 10).map(mapMovieToCardInternal);
+        };
+
+        // Order matters for exclusivity!
+        const familyMovies = getExclusiveMovies(m =>
+            m.genres && (m.genres.toLowerCase().includes('famille') || m.genres.toLowerCase().includes('animation') || m.genres.toLowerCase().includes('enfant'))
+        );
+        const horrorMovies = getExclusiveMovies(m => m.genres && m.genres.toLowerCase().includes('horreur'));
+        const actionMovies = getExclusiveMovies(m => m.genres && m.genres.toLowerCase().includes('action'));
+        const scifiAdventureMovies = getExclusiveMovies(m =>
+            m.genres && (m.genres.toLowerCase().includes('science-fiction') || m.genres.toLowerCase().includes('sci-fi') || m.genres.toLowerCase().includes('aventure'))
+        );
+        const comedyMovies = getExclusiveMovies(m => m.genres && m.genres.toLowerCase().includes('comédie'));
+
+        return {
+            trendingMovies,
+            top10France,
+            actionMovies,
+            horrorMovies,
+            familyMovies,
+            scifiAdventureMovies,
+            comedyMovies,
+            onSelectMovie
+        };
+    }, [movies]);
+
     if (loading) {
         return (
             <div className="min-h-screen bg-black flex items-center justify-center">
@@ -241,95 +339,6 @@ export default function Dashboard() {
             </div>
         );
     }
-
-    // --- Filtering Logic with Mutual Exclusivity ---
-
-    // 1. Independent Sets (Can overlap with genres)
-    const moviesMoment = [...movies]
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        .slice(0, 10)
-        .map(mapMovieToCard);
-
-    const trendingMovies = [...movies]
-        .sort((a, b) => (b.voteAverage || 0) - (a.voteAverage || 0))
-        .slice(0, 10)
-        .map(mapMovieToCard);
-
-    const top10France = movies.filter(movie =>
-        movie.isTop10 ||
-        (movie.genres && movie.genres.toLowerCase().includes('top 10'))
-    ).slice(0, 10).map(mapMovieToCard);
-
-    // Map of Top 10 Ranks for consistency across all views
-    const top10RankMap = new Map();
-    top10France.forEach((movie, index) => {
-        top10RankMap.set(movie.id, index + 1);
-    });
-
-    const onSelectMovie = (movie: any) => {
-        // Handle movie selection with rank consistency
-        const rank = top10RankMap.get(movie.id);
-        if (rank) {
-            // If movie is in Top 10, enforce its rank and status
-            setSelectedMovie({ ...movie, rank, isTop10: true });
-        } else {
-            setSelectedMovie(movie);
-        }
-    };
-
-    // 2. Exclusive Genre Sets (Waterfall)
-    // We track IDs to ensure a movie appears in only ONE genre row (Priority: Top10 -> Family -> Horror -> Fantasy -> Comedy -> Action)
-    const genreUsedIds = new Set<string | number>();
-
-    // Initialize with Top 10 movies to exclude them from other categories
-    top10France.forEach(movie => genreUsedIds.add(movie.id));
-
-    const getExclusiveMovies = (filterFn: (m: any) => boolean) => {
-        const result = movies.filter(m => {
-            if (genreUsedIds.has(m.id)) return false;
-            if (filterFn(m)) {
-                return true;
-            }
-            return false;
-        });
-        // Mark as used
-        result.forEach(m => genreUsedIds.add(m.id));
-        return result.slice(0, 10).map(mapMovieToCard);
-    };
-
-    // Priority 1: Enfants et Familles
-    const familyMovies = getExclusiveMovies(m =>
-        m.genres && (
-            m.genres.toLowerCase().includes('famille') ||
-            m.genres.toLowerCase().includes('animation') ||
-            m.genres.toLowerCase().includes('enfant')
-        )
-    );
-
-    // Priority 2: Horreur
-    const horrorMovies = getExclusiveMovies(m =>
-        m.genres && m.genres.toLowerCase().includes('horreur')
-    );
-
-    // Priority 3: Action (Moved up to capture Action/Sci-Fi mixes)
-    const actionMovies = getExclusiveMovies(m =>
-        m.genres && m.genres.toLowerCase().includes('action')
-    );
-
-    // Priority 4: Science-Fiction & Aventure (Replaces Fantastique)
-    const scifiAdventureMovies = getExclusiveMovies(m =>
-        m.genres && (
-            m.genres.toLowerCase().includes('science-fiction') ||
-            m.genres.toLowerCase().includes('science fiction') ||
-            m.genres.toLowerCase().includes('sci-fi') ||
-            m.genres.toLowerCase().includes('aventure')
-        )
-    );
-
-    // Priority 5: Comédie
-    const comedyMovies = getExclusiveMovies(m =>
-        m.genres && m.genres.toLowerCase().includes('comédie')
-    );
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white pb-20">
