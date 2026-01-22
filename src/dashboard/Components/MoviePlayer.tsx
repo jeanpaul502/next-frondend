@@ -183,20 +183,17 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
     // Handle Controls Visibility
     const handleMouseMove = () => {
         setShowControls(true);
-        if (controlTimeoutRef.current) clearTimeout(controlTimeoutRef.current);
-        controlTimeoutRef.current = setTimeout(() => {
-            if (isPlaying) setShowControls(false);
-        }, 3000);
     };
 
     useEffect(() => {
-        if (isPlaying) {
-            controlTimeoutRef.current = setTimeout(() => setShowControls(false), 3000);
+        let timeout: NodeJS.Timeout;
+        if (showControls && isPlaying) {
+            timeout = setTimeout(() => {
+                setShowControls(false);
+            }, 5000);
         }
-        return () => {
-            if (controlTimeoutRef.current) clearTimeout(controlTimeoutRef.current);
-        };
-    }, [isPlaying]);
+        return () => clearTimeout(timeout);
+    }, [showControls, isPlaying]);
 
     // Hide body scrollbar when player is active
     useEffect(() => {
@@ -404,7 +401,7 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
 
             {/* Top Bar (Back Button & PiP) */}
             <div 
-                className={`absolute top-0 left-0 w-full p-6 flex justify-between items-start transition-opacity duration-300 z-20 ${showControls ? 'opacity-100' : 'opacity-0'}`}
+                className={`absolute top-0 left-0 w-full p-6 flex justify-between items-start transition-opacity duration-300 z-20 ${showControls ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
                 onClick={(e) => { e.stopPropagation(); handleContainerClick(); }}
             >
                 <button
