@@ -88,11 +88,8 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
                 });
             }
             
-            // Force fullscreen on play (mobile experience)
-            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-            if (isMobile && !document.fullscreenElement) {
-                enterFullscreen();
-            }
+            // Force fullscreen on play removed to fix Android controls visibility issue
+            // User can manually toggle fullscreen
         };
 
         // 1. Try Native HLS (Safari / Mobile)
