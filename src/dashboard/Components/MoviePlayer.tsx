@@ -390,17 +390,16 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
             className="fixed inset-0 z-[100] w-full h-full bg-black overflow-hidden font-sans group"
             onMouseMove={handleMouseMove}
             onClick={handleContainerClick}
+            onDoubleClick={toggleFullscreen}
         >
             {/* Video */}
             <video
                 ref={videoRef}
-                className="w-full h-full object-contain"
+                className="w-full h-full object-contain pointer-events-none"
                 playsInline
                 autoPlay
                 preload="auto"
                 crossOrigin="anonymous"
-                onClick={(e) => { e.stopPropagation(); handleContainerClick(); }}
-                onDoubleClick={toggleFullscreen}
             />
 
             {/* Top Bar (Back Button & PiP) */}
@@ -455,7 +454,7 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
 
             {/* Bottom Controls */}
             <div
-                className={`absolute bottom-0 left-0 w-full pt-12 pb-6 px-6 transition-opacity duration-300 z-20 ${showControls ? 'opacity-100' : 'opacity-0'}`}
+                className={`absolute bottom-0 left-0 w-full pt-12 pb-6 px-6 transition-opacity duration-300 z-20 ${showControls ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Movie Title */}
