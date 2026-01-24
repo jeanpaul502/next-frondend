@@ -381,9 +381,6 @@ export default function Dashboard() {
                                         <span>Faire un don</span>
                                         <Icon icon="solar:hand-heart-bold" className="w-6 h-6 -rotate-12 transition-transform group-hover:scale-110" />
                                     </button>
-                                    <div className="text-white font-bold text-lg ml-2">
-                                        0€ <span className="text-xs text-gray-400 font-normal">/mois</span>
-                                    </div>
                                 </div>
                             </div>
 
