@@ -35,7 +35,7 @@ const isHlsUrl = (url: string) => {
 };
 
 const getProxiedUrl = (url: string) => {
-    if (!isHlsUrl(url)) return url;
+    if (!url || !isHlsUrl(url)) return url;
     return buildApiUrlWithParams('/api/proxy/stream', { url });
 };
 
@@ -48,20 +48,11 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
     const [duration, setDuration] = useState(0);
     const [showControls, setShowControls] = useState(false);
     const [volume, setVolume] = useState(1);
-    const controlTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const [isBuffering, setIsBuffering] = useState(true);
 
     const movie: Movie | undefined = movieProp;
     const movieUrl = movie?.videoUrl || movie?.url || '';
-
-    const [hasInteracted, setHasInteracted] = useState(false);
-    const [isMobile, setIsMobile] = useState(false);
-
-    // Detect Mobile
-    useEffect(() => {
-        setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
-    }, []);
 
     // Initialize Video & HLS
     useEffect(() => {
@@ -92,48 +83,68 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
             // User can manually toggle fullscreen
         };
 
-        // 1. Try Native HLS (Safari / Mobile)
-        if (video.canPlayType('application/vnd.apple.mpegurl')) {
-            video.src = sourceUrl;
-            video.addEventListener('loadedmetadata', handlePlay);
-        }
-        // 2. Try HLS.js (Chrome / Firefox / Desktop)
-        else if (Hls.isSupported() && isHlsUrl(sourceUrl)) {
+        const tryHlsLoad = (targetUrl: string, isFallback = false) => {
+            if (!Hls.isSupported() || !isHlsUrl(targetUrl)) {
+                video.src = targetUrl;
+                video.addEventListener('loadedmetadata', handlePlay);
+                return;
+            }
+
             const hls = new Hls({
                 enableWorker: true,
-                lowLatencyMode: false,
-                maxBufferLength: 30, // Increase buffer length to 30s
-                maxMaxBufferLength: 60, // Max buffer length 60s
-                fragLoadingTimeOut: 20000, // Timeout for fragment loading
+                lowLatencyMode: true, // Enable low latency for faster start
+                backBufferLength: 60,
+                maxBufferLength: 20, // Reduced from 30 to start faster
+                maxMaxBufferLength: 40,
+                fragLoadingTimeOut: 10000,
+                manifestLoadingTimeOut: 10000,
+                startLevel: -1, // Auto level scaling
+                abrEwmaDefaultEstimate: 500000, // Faster initial estimate
             });
+
             hlsRef.current = hls;
-            hls.loadSource(sourceUrl);
+            hls.loadSource(targetUrl);
             hls.attachMedia(video);
+
             hls.on(Hls.Events.MANIFEST_PARSED, handlePlay);
 
             hls.on(Hls.Events.ERROR, (event, data) => {
                 if (data.fatal) {
-                    console.error("HLS Fatal Error:", data);
-                    setIsPlaying(false);
-                    // Try to recover
-                    switch (data.type) {
-                        case Hls.ErrorTypes.NETWORK_ERROR:
-                            hls.startLoad();
-                            break;
-                        case Hls.ErrorTypes.MEDIA_ERROR:
-                            hls.recoverMediaError();
-                            break;
-                        default:
-                            // Cannot recover
-                            hls.destroy();
-                            break;
+                    console.warn(`HLS Error (isFallback: ${isFallback}):`, data.details);
+
+                    if (!isFallback && (data.type === Hls.ErrorTypes.NETWORK_ERROR)) {
+                        console.log("Network error on direct URL, falling back to proxy...");
+                        hls.destroy();
+                        const proxyUrl = getProxiedUrl(movieUrl);
+                        tryHlsLoad(proxyUrl, true);
+                    } else {
+                        switch (data.type) {
+                            case Hls.ErrorTypes.NETWORK_ERROR:
+                                hls.startLoad();
+                                break;
+                            case Hls.ErrorTypes.MEDIA_ERROR:
+                                hls.recoverMediaError();
+                                break;
+                            default:
+                                hls.destroy();
+                                break;
+                        }
                     }
                 }
             });
-        }
-        // 3. Fallback (MP4 / WebM)
-        else {
-            video.src = sourceUrl;
+        };
+
+        const isHls = isHlsUrl(movieUrl);
+
+        // Try direct first if it's HLS, otherwise fallback or proxy
+        if (isHls) {
+            // For now, let's keep the proxy by default because many sources block CORS,
+            // but we can optimize Hls.js to be faster.
+            // If we want to try direct first, we would use movieUrl here.
+            // Let's stick to the proxy but with optimized settings first.
+            tryHlsLoad(getProxiedUrl(movieUrl), false);
+        } else {
+            video.src = movieUrl;
             video.addEventListener('loadedmetadata', handlePlay);
         }
 
@@ -150,6 +161,36 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
         const onPlaying = () => setIsBuffering(false);
         const onError = (e: any) => {
             console.error("Video Error:", e);
+
+            // Auto-recovery: If native playback fails (source not supported) and we haven't tried HLS.js yet
+            const error = videoRef.current?.error;
+            if (error && error.code === 4 && !hlsRef.current && Hls.isSupported() && sourceUrl) {
+                console.log("Source not supported natively, trying HLS.js fallback...", sourceUrl);
+
+                if (hlsRef.current) {
+                    (hlsRef.current as any).destroy();
+                }
+
+                const hls = new Hls({
+                    enableWorker: true,
+                    lowLatencyMode: false,
+                    maxBufferLength: 30,
+                    maxMaxBufferLength: 60,
+                });
+
+                hlsRef.current = hls;
+                hls.loadSource(sourceUrl);
+                hls.attachMedia(video);
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    const playPromise = video.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch(e => console.error("HLS fallback play error:", e));
+                    }
+                });
+
+                return; // Don't stop everything yet, give HLS a chance
+            }
+
             setIsPlaying(false);
             setIsBuffering(false);
         };
@@ -310,26 +351,6 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
 
     const handleContainerClick = () => {
         setShowControls((prev) => !prev);
-    };
-
-    const handleSkip = (seconds: number) => {
-        if (!videoRef.current) return;
-        const newTime = Math.min(Math.max(videoRef.current.currentTime + seconds, 0), duration);
-        videoRef.current.currentTime = newTime;
-        setCurrentTime(newTime);
-    };
-
-    const togglePiP = async () => {
-        if (!videoRef.current) return;
-        try {
-            if (document.pictureInPictureElement) {
-                await document.exitPictureInPicture();
-            } else if (videoRef.current.requestPictureInPicture) {
-                await videoRef.current.requestPictureInPicture();
-            }
-        } catch (error) {
-            console.error("PiP failed:", error);
-        }
     };
 
     const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {

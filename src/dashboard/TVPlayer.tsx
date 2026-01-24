@@ -3,8 +3,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Hls from 'hls.js';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ChevronDown, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
-import { API_BASE_URL } from '../utils/config';
+import { ChevronDown } from 'lucide-react';
+import { API_BASE_URL, buildApiUrlWithParams } from '../utils/config';
 import { getCountryFlagUrl } from '../utils/countries';
 import { cleanChannelName } from '../utils/channelUtils';
 
@@ -22,6 +22,31 @@ interface Channel {
     url: string;
     group?: string;
 }
+
+const isHlsUrl = (url: string) => {
+    if (!url) return false;
+    const hlsPatterns = [
+        /\.m3u8(\?|#|$)/i,
+        /\/playlist\.m3u8/i,
+        /\/manifest\.m3u8/i,
+        /\/master\.m3u8/i,
+        /\/index\.m3u8/i,
+        /\/stream\.m3u8/i,
+        /api\/proxy\/stream/i,
+        /hls/i,
+        /streaming/i,
+        /application\/x-mpegURL/i,
+        /application\/vnd\.apple\.mpegurl/i
+    ];
+    return hlsPatterns.some(pattern => pattern.test(url));
+};
+
+const getProxiedUrl = (url: string) => {
+    if (!isHlsUrl(url)) return url;
+    // Si l'URL est déjà proxifiée, ne pas la re-proxifier
+    if (url.includes('/api/proxy/stream')) return url;
+    return buildApiUrlWithParams('/api/proxy/stream', { url });
+};
 
 export const TVPlayer = () => {
     const videoRef = useRef<HTMLVideoElement>(null);
@@ -49,9 +74,7 @@ export const TVPlayer = () => {
     const [playlists, setPlaylists] = useState<Playlist[]>([]);
     const [channels, setChannels] = useState<Channel[]>([]);
     const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
-    const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
     const [isPlaylistDropdownOpen, setIsPlaylistDropdownOpen] = useState(false);
-    const [isGroupDropdownOpen, setIsGroupDropdownOpen] = useState(false);
     const [isLoadingChannels, setIsLoadingChannels] = useState(false);
 
     // États pour le design (adaptés de MoviePlayer)
@@ -65,28 +88,12 @@ export const TVPlayer = () => {
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
-    // États pour la qualité vidéo et audio
-    const [levels, setLevels] = useState<any[]>([]);
-    const [currentLevel, setCurrentLevel] = useState<number>(-1);
-    const [showQualityMenu, setShowQualityMenu] = useState(false);
-    const [videoQualityLabel, setVideoQualityLabel] = useState<string>('AUTO');
-
     // États pour les pistes audio
     const [audioTracks, setAudioTracks] = useState<any[]>([]);
     const [currentAudioTrack, setCurrentAudioTrack] = useState<number>(-1);
     const [showAudioMenu, setShowAudioMenu] = useState(false);
 
     const hlsRef = useRef<Hls | null>(null);
-
-    // Groupes dérivés des chaînes
-    const groups = React.useMemo(() => {
-        return Array.from(new Set(channels.map(c => c.group).filter(Boolean))) as string[];
-    }, [channels]);
-
-    // Chaînes filtrées
-    const filteredChannels = React.useMemo(() => {
-        return channels.filter(c => !selectedGroup || c.group === selectedGroup);
-    }, [channels, selectedGroup]);
 
     // Initialisation du lecteur
     useEffect(() => {
@@ -107,7 +114,6 @@ export const TVPlayer = () => {
         let hls: Hls | null = null;
         setIsLoading(true);
         setError(null);
-        setVideoQualityLabel('Auto'); // Reset label
         setIsPlaying(true); // Reset play state for new channel
 
         const handlePlayPromise = (promise: Promise<void> | undefined) => {
@@ -156,11 +162,8 @@ export const TVPlayer = () => {
 
                 hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
                     if (!hls) return;
-                    setLevels(data.levels);
                     // S'assurer que le niveau est sur Auto au démarrage
                     hls.currentLevel = -1;
-                    setCurrentLevel(-1);
-                    setVideoQualityLabel('Auto');
                     handlePlayPromise(videoRef.current?.play());
                 });
 
@@ -173,26 +176,6 @@ export const TVPlayer = () => {
                         // HLS.js gère généralement ça, mais on met à jour l'état UI
                         const currentTrackId = hls?.audioTrack || 0;
                         setCurrentAudioTrack(currentTrackId);
-                    }
-                });
-
-                hls.on(Hls.Events.LEVEL_SWITCHED, (event, data) => {
-                    const level = hls?.levels[data.level];
-                    if (level) {
-                        const height = level.height;
-                        let label = 'SD';
-                        if (height >= 2160) label = '4K';
-                        else if (height >= 1440) label = '2K';
-                        else if (height >= 1080) label = 'FHD';
-                        else if (height >= 720) label = 'HD';
-
-                        // Si nous sommes en mode Auto (hls.autoLevelEnabled est true ou currentLevel est -1)
-                        // On affiche "Auto (Qualité)" pour indiquer que c'est automatique mais montrer la qualité actuelle
-                        if (hls?.autoLevelEnabled || hls?.currentLevel === -1) {
-                            setVideoQualityLabel(`Auto (${label})`);
-                        } else {
-                            setVideoQualityLabel(label);
-                        }
                     }
                 });
 
@@ -271,7 +254,6 @@ export const TVPlayer = () => {
 
         const fetchChannels = async () => {
             setIsLoadingChannels(true);
-            setSelectedGroup(null); // Réinitialiser le groupe
             try {
                 const response = await fetch(`${API_BASE_URL}/playlists/${selectedPlaylist.id}/channels`, {
                     credentials: 'include'
@@ -300,14 +282,14 @@ export const TVPlayer = () => {
         if (showControls) {
             timeout = setTimeout(() => {
                 // Ne pas cacher si le sidebar est ouvert ou si la vidéo est en pause ou si un dropdown est ouvert
-                if (isPlaying && !showSidebar && !isPlaylistDropdownOpen && !isGroupDropdownOpen) {
+                if (isPlaying && !showSidebar && !isPlaylistDropdownOpen) {
                     setShowControls(false);
                 }
             }, 5000);
         }
 
         return () => clearTimeout(timeout);
-    }, [showControls, isPlaying, showSidebar, isPlaylistDropdownOpen, isGroupDropdownOpen]);
+    }, [showControls, isPlaying, showSidebar, isPlaylistDropdownOpen]);
 
     const handleMouseMove = () => {
         setShowControls(true);
@@ -321,12 +303,6 @@ export const TVPlayer = () => {
                 videoRef.current.play();
             }
             setIsPlaying(!isPlaying);
-        }
-    };
-
-    const seek = (seconds: number) => {
-        if (videoRef.current) {
-            videoRef.current.currentTime += seconds;
         }
     };
 
@@ -390,54 +366,9 @@ export const TVPlayer = () => {
         }
     };
 
-    // Fonction pour naviguer vers la chaîne suivante
-    const handleNextChannel = () => {
-        if (!channels.length) return;
-
-        const currentIndex = channels.findIndex(c => c.url === channelUrl);
-        let nextIndex;
-
-        if (currentIndex === -1 || currentIndex === channels.length - 1) {
-            nextIndex = 0;
-        } else {
-            nextIndex = currentIndex + 1;
-        }
-
-        handleChannelClick(channels[nextIndex]);
-    };
-
-    // Fonction pour naviguer vers la chaîne précédente
-    const handlePrevChannel = () => {
-        if (!channels.length) return;
-
-        const currentIndex = channels.findIndex(c => c.url === channelUrl);
-        let prevIndex;
-
-        if (currentIndex === -1 || currentIndex === 0) {
-            prevIndex = channels.length - 1;
-        } else {
-            prevIndex = currentIndex - 1;
-        }
-
-        handleChannelClick(channels[prevIndex]);
-    };
-
     const handleChannelClick = (channel: Channel) => {
         // Naviguer vers la nouvelle chaîne en remplaçant l'URL actuelle
         router.replace(`/watch/tv?url=${encodeURIComponent(channel.url)}&name=${encodeURIComponent(channel.name)}&logo=${encodeURIComponent(channel.logo || '')}&playlistId=${selectedPlaylist?.id}`);
-    };
-
-    // Fonction pour changer la qualité
-    const handleQualityChange = (levelIndex: number) => {
-        if (hlsRef.current) {
-            hlsRef.current.currentLevel = levelIndex;
-            setCurrentLevel(levelIndex);
-            setShowQualityMenu(false);
-
-            if (levelIndex === -1) {
-                setVideoQualityLabel('AUTO');
-            }
-        }
     };
 
     // Fonction pour changer la piste audio
@@ -683,7 +614,6 @@ export const TVPlayer = () => {
                             <button
                                 onClick={() => {
                                     setIsPlaylistDropdownOpen(!isPlaylistDropdownOpen);
-                                    setIsGroupDropdownOpen(false);
                                 }}
                                 className="w-full flex items-center justify-between bg-white/5 border border-white/10 rounded-lg px-3 py-2 hover:bg-white/10 transition-all text-white text-xs font-medium"
                             >
@@ -740,7 +670,7 @@ export const TVPlayer = () => {
                             <span className="text-gray-400 text-sm">Chargement...</span>
                         </div>
                     ) : (
-                        filteredChannels.map((channel) => (
+                        channels.map((channel) => (
                             <div
                                 key={channel.id}
                                 onClick={() => handleChannelClick(channel)}
