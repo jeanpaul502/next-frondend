@@ -87,7 +87,7 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
                     setShowControls(true); // Show controls so user can click play
                 });
             }
-            
+
             // Force fullscreen on play removed to fix Android controls visibility issue
             // User can manually toggle fullscreen
         };
@@ -110,7 +110,7 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
             hls.loadSource(sourceUrl);
             hls.attachMedia(video);
             hls.on(Hls.Events.MANIFEST_PARSED, handlePlay);
-            
+
             hls.on(Hls.Events.ERROR, (event, data) => {
                 if (data.fatal) {
                     console.error("HLS Fatal Error:", data);
@@ -196,13 +196,13 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
     useEffect(() => {
         const originalOverflow = document.body.style.overflow;
         document.body.style.overflow = 'hidden';
-        
+
         return () => {
             document.body.style.overflow = originalOverflow;
             if (screen.orientation && (screen.orientation as any).unlock) {
                 try {
                     (screen.orientation as any).unlock();
-                } catch(e) {}
+                } catch (e) { }
             }
         };
     }, []);
@@ -210,7 +210,7 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
     const enterFullscreen = async () => {
         const element = containerRef.current as any;
         const videoElement = videoRef.current as any;
-        
+
         if (!element) return;
 
         const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -222,17 +222,17 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
         }
 
         // Android / Desktop: Use Container Fullscreen + Orientation Lock
-        const requestMethod = element.requestFullscreen || 
-                              element.webkitRequestFullscreen || 
-                              element.mozRequestFullScreen || 
-                              element.msRequestFullscreen;
+        const requestMethod = element.requestFullscreen ||
+            element.webkitRequestFullscreen ||
+            element.mozRequestFullScreen ||
+            element.msRequestFullscreen;
 
         if (requestMethod) {
             try {
                 await requestMethod.call(element);
                 // Try to lock orientation
                 if (screen.orientation && (screen.orientation as any).lock) {
-                     try {
+                    try {
                         await (screen.orientation as any).lock('landscape');
                     } catch (e) {
                         console.warn("Orientation lock failed:", e);
@@ -252,16 +252,16 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
 
     const exitFullscreen = () => {
         const doc = document as any;
-        
+
         // Check if we are actually in fullscreen before trying to exit
-        const isFullscreen = doc.fullscreenElement || 
-                           doc.webkitFullscreenElement || 
-                           doc.mozFullScreenElement || 
-                           doc.msFullscreenElement;
+        const isFullscreen = doc.fullscreenElement ||
+            doc.webkitFullscreenElement ||
+            doc.mozFullScreenElement ||
+            doc.msFullscreenElement;
 
         if (isFullscreen) {
             if (doc.exitFullscreen) {
-                doc.exitFullscreen().catch(() => {}); // Catch potential errors
+                doc.exitFullscreen().catch(() => { }); // Catch potential errors
             } else if (doc.webkitExitFullscreen) {
                 doc.webkitExitFullscreen();
             } else if (doc.mozCancelFullScreen) {
@@ -270,23 +270,23 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
                 doc.msExitFullscreen();
             }
         }
-        
+
         if (screen.orientation && (screen.orientation as any).unlock) {
             try {
                 (screen.orientation as any).unlock();
-            } catch(e) {}
+            } catch (e) { }
         }
     };
 
     const toggleFullscreen = () => {
         const doc = document as any;
         const videoEl = videoRef.current as any;
-        const isFullscreen = doc.fullscreenElement || 
-                           doc.webkitFullscreenElement || 
-                           doc.mozFullScreenElement || 
-                           doc.msFullscreenElement ||
-                           (videoEl && videoEl.webkitDisplayingFullscreen);
-        
+        const isFullscreen = doc.fullscreenElement ||
+            doc.webkitFullscreenElement ||
+            doc.mozFullScreenElement ||
+            doc.msFullscreenElement ||
+            (videoEl && videoEl.webkitDisplayingFullscreen);
+
         if (!isFullscreen) {
             enterFullscreen();
         } else {
@@ -299,7 +299,10 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
         if (!videoRef.current) return;
 
         if (videoRef.current.paused) {
-            videoRef.current.play();
+            const playPromise = videoRef.current.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(e => console.error("Play error:", e));
+            }
         } else {
             videoRef.current.pause();
         }
@@ -333,8 +336,8 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
         if (!videoRef.current) return;
         const time = parseFloat(e.target.value);
         if (Number.isFinite(time)) {
-             videoRef.current.currentTime = time;
-             setCurrentTime(time);
+            videoRef.current.currentTime = time;
+            setCurrentTime(time);
         }
     };
 
@@ -397,7 +400,7 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
             />
 
             {/* Top Bar (Back Button & PiP) */}
-            <div 
+            <div
                 className={`absolute top-0 left-0 w-full p-6 flex justify-between items-start transition-opacity duration-300 z-20 ${showControls ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
                 onClick={(e) => { e.stopPropagation(); handleContainerClick(); }}
             >
@@ -424,12 +427,12 @@ const MoviePlayer = ({ movie: movieProp, onClose }: MoviePlayerProps) => {
 
             {/* Center Controls (Skips & Play/Pause) */}
             {!isBuffering && (
-                <div 
+                <div
                     className={`absolute inset-0 flex items-center justify-center gap-12 z-10 transition-opacity duration-300 ${showControls || !isPlaying ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
                     onClick={(e) => { e.stopPropagation(); handleContainerClick(); }}
                 >
                     {/* Play/Pause */}
-                    <button 
+                    <button
                         className="w-14 h-14 bg-black/30 rounded-full flex items-center justify-center backdrop-blur-md border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.5)] hover:bg-black/40 hover:scale-105 hover:border-white/40 transition-all duration-300 cursor-pointer pointer-events-auto group/play"
                         onClick={(e) => { e.stopPropagation(); togglePlay(); }}
                     >
