@@ -192,16 +192,24 @@ export const Navbar = ({ onSearch }: { onSearch?: (query: string) => void }) => 
                 const response = await fetch(`${API_BASE_URL}/auth/me`, {
                     credentials: 'include',
                 });
+
                 if (response.ok) {
                     const data = await response.json();
-                    // Handle response structure (data vs data.user)
                     const user = data.user || data;
                     setUserData(user);
-                    // Save to cache
                     localStorage.setItem('netfix_user_data', JSON.stringify(user));
+                } else if (response.status === 401) {
+                    // Session is invalid on server, clear local cache
+                    localStorage.removeItem('netfix_user_data');
+                    setUserData(null);
+
+                    // Only redirect if we are on a protected dashboard route
+                    if (window.location.pathname.startsWith('/dashboard')) {
+                        router.push('/login');
+                    }
                 }
             } catch (error) {
-                // Silent error
+                console.error("Fetch user data error:", error);
             } finally {
                 setIsLoading(false);
             }
